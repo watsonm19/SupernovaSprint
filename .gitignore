@@ -1,0 +1,31 @@
+# ── Unity generated ───────────────────────────────────────────────────────────
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Bb]uild/
+[Bb]uilds/
+[Uu]ser[Ss]ettings/
+
+# ── Visual Studio ─────────────────────────────────────────────────────────────
+.vs/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── JetBrains Rider ───────────────────────────────────────────────────────────
+.idea/
+
+# ── VS Code ───────────────────────────────────────────────────────────────────
+.vscode/
+
+# ── Asset Store packages (re-download from store, don't commit) ───────────────
+*.unitypackage
