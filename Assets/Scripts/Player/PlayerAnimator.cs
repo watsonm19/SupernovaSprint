@@ -1,13 +1,16 @@
 // ═════════════════════════════════════════════════════════════════════════════
 //  PlayerAnimator.cs
-//  Bridges SupernovaSprintController's runtime state to the Astronaut Animator.
+//  Drives the Astronaut Animator from SupernovaSprintController's runtime state.
+//
+//  PARAMETERS (set by AstronautAnimatorBuilder):
+//    Speed      (float) — current movement speed
+//    IsGrounded (bool)  — true when on a surface
+//    IsHoming   (bool)  — true during a homing attack
 //
 //  SETUP:
-//    1. Drag Astronaut.fbx into the scene as a child of the Player root,
-//       replacing the primitive visual model.
-//    2. Assign AstronautCharacterController.controller to the Animator on the FBX.
-//    3. Add this component to the Player root.
-//    4. Assign the Controller and Animator references in the Inspector.
+//    1. Run Supernova Sprint → Build Astronaut Animator to generate the controller.
+//    2. Assign the generated controller to the Animator on the Visual child.
+//    3. Add this component to the Player root and assign both references.
 // ═════════════════════════════════════════════════════════════════════════════
 
 using UnityEngine;
@@ -22,17 +25,21 @@ public class PlayerAnimator : MonoBehaviour
     public Animator animator;
 
     [Header("Thresholds")]
-    [Tooltip("Speed above which the run animation plays.")]
-    public float runThreshold = 0.5f;
+    [Tooltip("Speed above which the Run animation plays instead of Walk.\n" +
+             "Set this to Normal Mode topSpeed (25) so Rocket Mode triggers Run.")]
+    public float runThreshold = 25f;
 
-    // AnimationPar values defined by AstronautCharacterController.controller
-    private static readonly int AnimationPar = Animator.StringToHash("AnimationPar");
+    // Cached parameter hashes — faster than string lookup every frame.
+    private static readonly int SpeedHash      = Animator.StringToHash("Speed");
+    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
+    private static readonly int IsHomingHash   = Animator.StringToHash("IsHoming");
 
     private void Update()
     {
         if (controller == null || animator == null) return;
 
-        int state = controller.currentSpeed > runThreshold ? 1 : 0;
-        animator.SetInteger(AnimationPar, state);
+        animator.SetFloat(SpeedHash,      controller.currentSpeed);
+        animator.SetBool(IsGroundedHash,  controller.isGroundedPublic);
+        animator.SetBool(IsHomingHash,    controller.isHomingPublic);
     }
 }

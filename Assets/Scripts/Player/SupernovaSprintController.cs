@@ -192,6 +192,10 @@ public class SupernovaSprintController : MonoBehaviour
     // True while Rocket Mode (Polarity toggle) is active — readable by other scripts (e.g. HUD).
     [System.NonSerialized] public bool isRocketMode;
 
+    // Animator-readable state flags — written each FixedUpdate by UpdateState().
+    [System.NonSerialized] public bool isGroundedPublic;
+    [System.NonSerialized] public bool isHomingPublic;
+
     // Normal Mode value snapshots — captured in Awake() so toggling back always restores them.
     private float _baseTopSpeed;
     private float _baseAcceleration;
@@ -234,7 +238,12 @@ public class SupernovaSprintController : MonoBehaviour
     private void FixedUpdate()
     {
         // The homing attack coroutine drives its own movement; pause everything else.
-        if (state == PlayerState.HomingAttack) return;
+        // Set the public flag before returning so PlayerAnimator sees it this frame.
+        if (state == PlayerState.HomingAttack)
+        {
+            isHomingPublic = true;
+            return;
+        }
 
         TickTimers();
         DetectGround();
@@ -443,6 +452,9 @@ public class SupernovaSprintController : MonoBehaviour
         {
             state = PlayerState.Airborne;
         }
+
+        isGroundedPublic = isGrounded;
+        isHomingPublic   = state == PlayerState.HomingAttack;
     }
 
     #endregion
