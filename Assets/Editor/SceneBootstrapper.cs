@@ -309,7 +309,7 @@ public static class SceneBootstrapper
         tpc.collisionLayers = 1 << groundLayer;
 
         var cam = camGO.GetComponent<Camera>();
-        if (cam != null) cam.farClipPlane = 5000f;
+        if (cam != null) cam.farClipPlane = 10000f;
 
         // Start behind and above the player so the first frame looks right.
         camGO.transform.position = playerTarget.position + new Vector3(0f, 5f, -10f);
