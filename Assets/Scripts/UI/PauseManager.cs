@@ -38,7 +38,7 @@ public class PauseManager : MonoBehaviour
     private const int SCREEN_CONTROLS   = 1;
     private const int SCREEN_DIFFICULTY = 2;
 
-    private static readonly string[] MenuItems = { "RESUME", "RESTART", "DIFFICULTY", "CONTROLS" };
+    private static readonly string[] MenuItems = { "RESUME", "RESTART", "DIFFICULTY", "CONTROLS", "MAIN MENU" };
     private static readonly Color    ColorSelected   = Color.white;
     private static readonly Color    ColorUnselected = new Color(0.45f, 0.45f, 0.45f);
     private static readonly Color    ColorActive     = Color.yellow;   // current difficulty
@@ -151,6 +151,7 @@ public class PauseManager : MonoBehaviour
                 case 1: Restart();           break;
                 case 2: ShowDifficulty();    break;
                 case 3: ShowControls();      break;
+                case 4: MainMenu();          break;
             }
         }
     }
@@ -214,6 +215,12 @@ public class PauseManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private static void MainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(0);
     }
 
     private void RefreshMenuSelection()
@@ -282,7 +289,7 @@ public class PauseManager : MonoBehaviour
             88f, FontStyles.Bold, 180f, 700f, Color.white);
 
         _menuLabels = new TextMeshProUGUI[MenuItems.Length];
-        float[] yOffsets = { 50f, -50f, -150f, -250f };
+        float[] yOffsets = { 50f, -50f, -150f, -250f, -350f };
 
         for (int i = 0; i < MenuItems.Length; i++)
             _menuLabels[i] = MakeLabel(panel.transform, MenuItems[i], MenuItems[i],
@@ -291,7 +298,7 @@ public class PauseManager : MonoBehaviour
 
         MakeLabel(panel.transform, "Hint",
             "↑ ↓  Navigate     A / SPACE  Select     START / ESC  Close",
-            22f, FontStyles.Normal, -360f, 1000f,
+            22f, FontStyles.Normal, -455f, 1000f,
             new Color(0.4f, 0.4f, 0.4f));
 
         return panel;

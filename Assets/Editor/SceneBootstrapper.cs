@@ -17,13 +17,16 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [InitializeOnLoad]
 public static class SceneBootstrapper
 {
-    const string ROOT_NAME  = "[SupernovaSprint]";
-    const string SCENE_NOTE = "Supernova Sprint / ⚡ Rebuild Test Scene";
+    const string ROOT_NAME        = "[SupernovaSprint]";
+    const string SCENE_NOTE       = "Supernova Sprint / ⚡ Rebuild Test Scene";
+    const string TITLE_SCENE_PATH = "Assets/Scenes/TitleScreen.unity";
+    const string GAME_SCENE_PATH  = "Assets/Scenes/StrangeWorld.unity";
 
     // Used by BuildKillPlane to centre the trigger under the level.
     const float TRACK_LEN   = 160f;
@@ -39,6 +42,7 @@ public static class SceneBootstrapper
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
         if (BuildPipeline.isBuildingPlayer) return;
+        if (EditorSceneManager.GetActiveScene().path == TITLE_SCENE_PATH) return; // Never touch the title scene
         if (GameObject.Find(ROOT_NAME) != null) return; // Already built
 
         bool go = EditorUtility.DisplayDialog(
@@ -68,7 +72,22 @@ public static class SceneBootstrapper
     }
 
     [MenuItem("Supernova Sprint/⚡ Rebuild Test Scene", validate = true)]
-    static bool MenuRebuildValidate() => !EditorApplication.isPlaying;
+    static bool MenuRebuildValidate() =>
+        !EditorApplication.isPlaying &&
+        EditorSceneManager.GetActiveScene().path != TITLE_SCENE_PATH;
+
+    [MenuItem("Supernova Sprint/⚡ Rebuild Title Screen", priority = 1)]
+    static void MenuBuildTitleScreen()
+    {
+        if (!EditorUtility.DisplayDialog("Build Title Screen",
+            "Create/rebuild the title screen scene at " + TITLE_SCENE_PATH + "?",
+            "Build", "Cancel")) return;
+
+        BuildTitleScene();
+    }
+
+    [MenuItem("Supernova Sprint/⚡ Rebuild Title Screen", validate = true)]
+    static bool MenuBuildTitleScreenValidate() => !EditorApplication.isPlaying;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  CORE BUILD
@@ -203,6 +222,7 @@ public static class SceneBootstrapper
             if (SceneView.lastActiveSceneView != null)
                 SceneView.lastActiveSceneView.FrameSelected();
 
+            UpdateBuildSettings();
             Debug.Log("[Supernova Sprint] Scene built and saved. Press Play to test!");
         }
         catch (Exception e)
@@ -577,5 +597,77 @@ public static class SceneBootstrapper
         tags.GetArrayElementAtIndex(idx).stringValue = tagName;
         tm.ApplyModifiedProperties();
         Debug.Log($"[Supernova Sprint] Added tag '{tagName}'.");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  TITLE SCREEN
+    // ─────────────────────────────────────────────────────────────────────────
+
+    static void BuildTitleScene()
+    {
+        try
+        {
+            EnsureScenesFolder();
+
+            // Create the title scene additively so the current scene is untouched,
+            // then explicitly set it as active so new GameObjects land inside it.
+            var titleScene = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            SceneManager.SetActiveScene(titleScene);
+
+            // ── Camera ────────────────────────────────────────────────────────
+            var camGO           = new GameObject("Main Camera");
+            camGO.tag           = "MainCamera";
+            var cam             = camGO.AddComponent<Camera>();
+            cam.clearFlags      = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Color.black;
+            camGO.AddComponent<AudioListener>();
+
+            // ── TitleScreen controller ────────────────────────────────────────
+            new GameObject("TitleScreen").AddComponent<TitleScreen>();
+
+            // ── Save ─────────────────────────────────────────────────────────
+            EditorSceneManager.SaveScene(titleScene, TITLE_SCENE_PATH);
+            EditorSceneManager.CloseScene(titleScene, true);
+
+            UpdateBuildSettings();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log("[Supernova Sprint] Title screen built at " + TITLE_SCENE_PATH);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(
+                "[Supernova Sprint] Title screen build failed:\n" +
+                e.Message + "\n\n" + e.StackTrace);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  BUILD SETTINGS
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Ensures scene order: 0 = TitleScreen, 1 = TestTrack (game).
+    //  Called after building either scene so they stay in sync.
+
+    static void UpdateBuildSettings()
+    {
+        bool hasTitle = AssetDatabase.LoadAssetAtPath<SceneAsset>(TITLE_SCENE_PATH) != null;
+        bool hasGame  = AssetDatabase.LoadAssetAtPath<SceneAsset>(GAME_SCENE_PATH)  != null;
+
+        int count = (hasTitle ? 1 : 0) + (hasGame ? 1 : 0);
+        var scenes = new EditorBuildSettingsScene[count];
+        int i = 0;
+        if (hasTitle) scenes[i++] = new EditorBuildSettingsScene(TITLE_SCENE_PATH, true);
+        if (hasGame)  scenes[i++] = new EditorBuildSettingsScene(GAME_SCENE_PATH,  true);
+
+        EditorBuildSettings.scenes = scenes;
+        Debug.Log($"[Supernova Sprint] Build settings updated — {count} scene(s) registered.");
+    }
+
+    static void EnsureScenesFolder()
+    {
+        if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
+            AssetDatabase.CreateFolder("Assets", "Scenes");
     }
 }
