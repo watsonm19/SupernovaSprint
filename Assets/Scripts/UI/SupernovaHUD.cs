@@ -9,17 +9,19 @@
 //    4. Add this component anywhere (e.g. the Canvas root).
 //    5. Assign Player Controller from the scene.
 //
-//  TIMER FORMAT:   MM:SS:ff   (ff = centiseconds 00-99)
+//  TIMER FORMAT:   MM:SS   (counts DOWN from GameDifficulty.TimeLimit)
+//  TIMER FLASH:    Red pulse when < 30 s remaining
 //
 //  SPEED COLOURS:
-//    0–50  display → White
-//    50–90 display → Yellow
-//    90–100 display → Red-orange + pulse  (normal top speed)
-//    100+  display → Cyan (boost colour) + faster/larger pulse
+//    0–50   display → White
+//    51–99  display → Yellow
+//    100–150 display → Red-orange + pulse  (normal top speed)
+//    151–200 display → Cyan + faster/larger pulse  (rocket mode)
 // ═════════════════════════════════════════════════════════════════════════════
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SupernovaHUD : MonoBehaviour
 {
@@ -50,11 +52,11 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("Colour when speed exceeds 100 (boost state — above normal top speed).")]
     public Color colorBoost = Color.cyan;
 
-    [Tooltip("Display value (0–100) where the colour starts shifting from white to yellow.")]
+    [Tooltip("Display value where the colour starts shifting from white to yellow.")]
     public float thresholdLow  = 50f;
 
-    [Tooltip("Display value (0–100) where the colour shifts to red-orange and pulse begins.")]
-    public float thresholdHigh = 90f;
+    [Tooltip("Display value where the colour shifts to red-orange and pulse begins.")]
+    public float thresholdHigh = 100f;
 
     // ── Speedometer scale ─────────────────────────────────────────────────────
 
@@ -62,7 +64,7 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("The real speed (m/s) that maps to a display value of 100.\n" +
              "Matches topSpeed × 1.25 (the controller's slope-boost ceiling).\n" +
              "Values above 100 only appear when a boost trigger is active.")]
-    public float maxDisplaySpeed = 38f;
+    public float maxDisplaySpeed = 31.6f;
 
     // ── Pulse ─────────────────────────────────────────────────────────────────
 
@@ -73,11 +75,21 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("Peak scale multiplier added on top of 1.0 (e.g. 0.08 = ±8% size swing).")]
     public float pulseAmplitude = 0.08f;
 
+    // ── Timer flash (low time) ─────────────────────────────────────────────────
+
+    [Header("Timer Flash")]
+    [Tooltip("Seconds remaining at which the timer starts flashing red.")]
+    public float flashThreshold = 30f;
+
+    [Tooltip("Oscillations per second of the red flash.")]
+    public float flashFrequency = 2f;
+
     // ── Private state ─────────────────────────────────────────────────────────
 
-    private float   _elapsed;           // Total seconds counted so far
+    private float   _remaining;         // Seconds left on the countdown
     private bool    _timerRunning;      // True once the player first moves
     private bool    _hasStarted;        // Latched — prevents re-triggering mid-run
+    private bool    _expired;           // True once timer hit zero (prevent double-restart)
     private Vector3 _speedBaseScale;    // Original localScale of speedText transform
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -87,7 +99,10 @@ public class SupernovaHUD : MonoBehaviour
         if (speedText != null)
             _speedBaseScale = speedText.transform.localScale;
 
-        // Show the zeroed timer immediately so the canvas doesn't flash empty.
+        // Initialise remaining time from current difficulty
+        _remaining = GameDifficulty.TimeLimit;
+
+        // Show the full timer immediately so the canvas doesn't flash empty.
         RefreshTimerDisplay();
     }
 
@@ -112,7 +127,19 @@ public class SupernovaHUD : MonoBehaviour
 
         if (!_timerRunning) return;
 
-        _elapsed += Time.deltaTime;
+        _remaining -= Time.deltaTime;
+
+        if (_remaining <= 0f && !_expired)
+        {
+            _remaining = 0f;
+            _expired   = true;
+            RefreshTimerDisplay();
+            // Restart — time's up!
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            return;
+        }
+
         RefreshTimerDisplay();
     }
 
@@ -120,11 +147,22 @@ public class SupernovaHUD : MonoBehaviour
     {
         if (timerText == null) return;
 
-        int minutes      = (int)(_elapsed / 60f);
-        int seconds      = (int)(_elapsed % 60f);
-        int centiseconds = (int)((_elapsed % 1f) * 100f);
+        float display  = Mathf.Max(_remaining, 0f);
+        int minutes    = (int)(display / 60f);
+        int seconds    = (int)(display % 60f);
 
-        timerText.text = $"{minutes:D2}:{seconds:D2}:{centiseconds:D2}";
+        timerText.text = $"{minutes:D2}:{seconds:D2}";
+
+        // Flash red when time is running low
+        if (_timerRunning && _remaining <= flashThreshold && !_expired)
+        {
+            float alpha   = 0.5f + 0.5f * Mathf.Sin(Time.time * flashFrequency * Mathf.PI * 2f);
+            timerText.color = Color.Lerp(Color.white, Color.red, alpha);
+        }
+        else
+        {
+            timerText.color = Color.white;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -140,7 +178,7 @@ public class SupernovaHUD : MonoBehaviour
         // ── Text ──────────────────────────────────────────────────────────────
         //  Remap real speed to a 0–100+ display scale where 100 = maxDisplaySpeed.
         //  No Clamp01 — values above 100 are intentional during boost.
-        int displayValue = Mathf.RoundToInt(speed / maxDisplaySpeed * 100f);
+        int displayValue = Mathf.FloorToInt(speed / maxDisplaySpeed * 100f);
         speedText.text = $"{displayValue}";
 
         // ── Colour ────────────────────────────────────────────────────────────
@@ -160,15 +198,16 @@ public class SupernovaHUD : MonoBehaviour
             float t = (displayValue - thresholdLow) / (thresholdHigh - thresholdLow);
             targetColor = Color.Lerp(colorLow, colorMid, t);
         }
-        else if (displayValue < 100)
+        else if (displayValue < 151)
         {
-            float t = Mathf.Clamp01((displayValue - thresholdHigh) / (100f - thresholdHigh));
+            // 100–150: lerp yellow → red-orange
+            float t = Mathf.Clamp01((displayValue - thresholdHigh) / 50f);
             targetColor = Color.Lerp(colorMid, colorHigh, t);
         }
         else
         {
-            // Boost range: 100 → 150 lerps red-orange fully into cyan.
-            float t = Mathf.Clamp01((displayValue - 100f) / 50f);
+            // 151–200: lerp red-orange → cyan (rocket mode)
+            float t = Mathf.Clamp01((displayValue - 151f) / 49f);
             targetColor = Color.Lerp(colorHigh, colorBoost, t);
         }
         speedText.color = targetColor;
@@ -180,8 +219,8 @@ public class SupernovaHUD : MonoBehaviour
         //  Above 100 (boost): frequency and amplitude are doubled for extra urgency.
         if (displayValue >= thresholdHigh)
         {
-            float freqMult = displayValue >= 100 ? 2f : 1f;
-            float ampMult  = displayValue >= 100 ? 2f : 1f;
+            float freqMult = displayValue >= 151 ? 2f : 1f;
+            float ampMult  = displayValue >= 151 ? 2f : 1f;
             float sine  = Mathf.Sin(Time.time * pulseFrequency * freqMult * Mathf.PI * 2f);
             float scale = 1f + sine * pulseAmplitude * ampMult;
             speedText.transform.localScale = _speedBaseScale * scale;
@@ -206,14 +245,15 @@ public class SupernovaHUD : MonoBehaviour
     }
 
     /// <summary>
-    /// Resets the timer back to 00:00:00 and restarts it.
-    /// Hook this into SupernovaRespawnManager's respawn sequence if needed.
+    /// Resets the timer back to the current difficulty's time limit and
+    /// waits for the player to move again before counting down.
     /// </summary>
     public void ResetTimer()
     {
-        _elapsed      = 0f;
+        _remaining    = GameDifficulty.TimeLimit;
         _timerRunning = false;
-        _hasStarted   = false;  // Wait for the player to move again before counting
+        _hasStarted   = false;
+        _expired      = false;
         RefreshTimerDisplay();
     }
 }

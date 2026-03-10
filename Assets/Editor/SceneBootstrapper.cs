@@ -108,8 +108,13 @@ public static class SceneBootstrapper
             // ── HUD ───────────────────────────────────────────────────────────
             SupernovaHUD hud = BuildHUD(root.transform, player);
 
+            // ── Fail Screen ───────────────────────────────────────────────────
+            var failGO = new GameObject("FailScreen");
+            failGO.transform.SetParent(root.transform, false);
+            var failScreen = failGO.AddComponent<FailScreen>();
+
             // ── Kill plane / respawn manager ──────────────────────────────────
-            BuildKillPlane(root.transform, player, camGO, hud);
+            BuildKillPlane(root.transform, player, camGO, hud, failScreen);
 
             // ── Wire controller references ────────────────────────────────────
             var ctrl = player.GetComponent<SupernovaSprintController>();
@@ -169,6 +174,16 @@ public static class SceneBootstrapper
                     "[Supernova Sprint] SupernovaSprintController not found on player. " +
                     "Check the Console for compile errors — fix them and run Rebuild.");
             }
+
+            // ── Pause Manager ─────────────────────────────────────────────────
+            var pauseGO = new GameObject("PauseManager");
+            pauseGO.transform.SetParent(root.transform, false);
+            pauseGO.AddComponent<PauseManager>();
+
+            // ── Earthquake intro shake ─────────────────────────────────────────
+            var eqGO = new GameObject("EarthquakeIntro");
+            eqGO.transform.SetParent(root.transform, false);
+            eqGO.AddComponent<EarthquakeIntro>();
 
             // ── Lighting ──────────────────────────────────────────────────────
             SetupLighting();
@@ -378,6 +393,7 @@ public static class SceneBootstrapper
         hud.timerText          = timerTMP;
         hud.speedText          = speedTMP;
         hud.playerController   = player.GetComponent<SupernovaSprintController>();
+        hud.maxDisplaySpeed    = 31.6f;
 
         EditorUtility.SetDirty(canvasGO);
         return hud;
@@ -416,7 +432,8 @@ public static class SceneBootstrapper
     //  A large trigger box well below the track.  Any object tagged "Player"
     //  that enters it triggers the SupernovaRespawnManager respawn sequence.
 
-    static void BuildKillPlane(Transform parent, GameObject player, GameObject camGO, SupernovaHUD hud)
+    static void BuildKillPlane(Transform parent, GameObject player, GameObject camGO,
+                                SupernovaHUD hud, FailScreen failScreen)
     {
         var kp = new GameObject("KillPlane");
         kp.transform.SetParent(parent, false);
@@ -427,11 +444,12 @@ public static class SceneBootstrapper
         col.isTrigger = true;
         col.size      = new Vector3(500f, 5f, 500f);
 
-        // Wire the respawn manager to the player and camera.
+        // Wire the respawn manager to the player, camera, and fail screen.
         var rm = kp.AddComponent<SupernovaRespawnManager>();
         rm.playerController  = player.GetComponent<SupernovaSprintController>();
         rm.thirdPersonCamera = camGO.GetComponent<ThirdPersonCamera>();
         rm.hud               = hud;
+        rm.failScreen        = failScreen;
 
         EditorUtility.SetDirty(kp);
     }

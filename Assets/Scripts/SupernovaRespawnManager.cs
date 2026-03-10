@@ -60,10 +60,16 @@ public class SupernovaRespawnManager : MonoBehaviour
     [Tooltip("Peak displacement of the camera shake (world metres).")]
     public float shakeMagnitude = 0.6f;
 
+    // ── Fail screen ───────────────────────────────────────────────────────────
+
+    [Header("Fail Screen")]
+    [Tooltip("The FailScreen component in the scene. Shown instead of respawning.")]
+    public FailScreen failScreen;
+
     // ── Fall death ────────────────────────────────────────────────────────────
 
     [Header("Fall Death")]
-    [Tooltip("If the player's Y position drops below this value, respawn is triggered.\n" +
+    [Tooltip("If the player's Y position drops below this value, death is triggered.\n" +
              "Set it well below your lowest track surface. Works regardless of level size.")]
     public float deathYThreshold = -20f;
 
@@ -102,15 +108,36 @@ public class SupernovaRespawnManager : MonoBehaviour
     {
         if (_isRespawning || playerController == null) return;
         if (playerController.transform.position.y < deathYThreshold)
-            Respawn();
+            TriggerDeath();
     }
 
-    // ── Kill-plane trigger (backup) ───────────────────────────────────────────
+    // ── Kill-plane trigger ────────────────────────────────────────────────────
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
+            TriggerDeath();
+    }
+
+    private void TriggerDeath()
+    {
+        if (_isRespawning) return;
+        _isRespawning = true;    // Prevent repeated calls
+
+        if (hud != null) hud.StopTimer();
+
+        if (failScreen != null)
+        {
+            if (thirdPersonCamera != null)
+                thirdPersonCamera.StartShake(shakeDuration, shakeMagnitude);
+            failScreen.Show();
+        }
+        else
+        {
+            // Fallback: respawn if no fail screen is wired up
+            _isRespawning = false;
             Respawn();
+        }
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

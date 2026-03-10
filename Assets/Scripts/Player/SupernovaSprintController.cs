@@ -296,6 +296,8 @@ public class SupernovaSprintController : MonoBehaviour
 
     private void GatherInput()
     {
+        if (Time.timeScale < 0.01f) return; // Don't read input while paused or time-frozen
+
         Vector2 newMoveInput = Vector2.zero;
         bool    newJumpPressed = false;
         bool    newJumpHeld    = false;
