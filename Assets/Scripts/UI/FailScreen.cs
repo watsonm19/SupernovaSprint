@@ -91,7 +91,7 @@ public class FailScreen : MonoBehaviour
 
         // Message
         MakeLabel(canvasGO.transform, "FailMessage",
-            "You fell off the ledge and cannot get back to your ship.",
+            "You fell off the ledge and cannot get back to your ship",
             36f, FontStyles.Normal, -40f, 960f,
             new Color(0.85f, 0.85f, 0.85f));
 

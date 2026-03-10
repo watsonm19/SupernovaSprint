@@ -21,7 +21,6 @@
 
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class SupernovaHUD : MonoBehaviour
 {
@@ -36,6 +35,9 @@ public class SupernovaHUD : MonoBehaviour
 
     [Tooltip("The player's SupernovaSprintController — provides currentSpeed.")]
     public SupernovaSprintController playerController;
+
+    [Tooltip("Drives the edge border warning and fade-to-white when time expires.")]
+    public TimeFailScreen timeFailScreen;
 
     // ── Speed colour thresholds ───────────────────────────────────────────────
 
@@ -134,11 +136,14 @@ public class SupernovaHUD : MonoBehaviour
             _remaining = 0f;
             _expired   = true;
             RefreshTimerDisplay();
-            // Restart — time's up!
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            if (timeFailScreen != null)
+                timeFailScreen.TriggerFail();
             return;
         }
+
+        // Drive the edge-border warning
+        if (timeFailScreen != null)
+            timeFailScreen.OnTimerTick(_remaining);
 
         RefreshTimerDisplay();
     }

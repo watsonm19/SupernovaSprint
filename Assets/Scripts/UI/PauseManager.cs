@@ -276,7 +276,7 @@ public class PauseManager : MonoBehaviour
         panel.transform.SetParent(parent, false);
 
         MakeLabel(panel.transform, "Mission", "Escape the planet before it explodes!",
-            28f, FontStyles.Normal, 290f, 800f, Color.yellow);
+            36f, FontStyles.Normal, 290f, 800f, Color.yellow);
 
         MakeLabel(panel.transform, "Title", "PAUSED",
             88f, FontStyles.Bold, 180f, 700f, Color.white);

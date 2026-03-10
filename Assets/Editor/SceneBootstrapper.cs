@@ -108,10 +108,15 @@ public static class SceneBootstrapper
             // ── HUD ───────────────────────────────────────────────────────────
             SupernovaHUD hud = BuildHUD(root.transform, player);
 
-            // ── Fail Screen ───────────────────────────────────────────────────
+            // ── Fail Screen (kill plane) ──────────────────────────────────────
             var failGO = new GameObject("FailScreen");
             failGO.transform.SetParent(root.transform, false);
             var failScreen = failGO.AddComponent<FailScreen>();
+
+            // ── Time Fail Screen (timer expiry) ───────────────────────────────
+            var timeFailGO = new GameObject("TimeFailScreen");
+            timeFailGO.transform.SetParent(root.transform, false);
+            hud.timeFailScreen = timeFailGO.AddComponent<TimeFailScreen>();
 
             // ── Kill plane / respawn manager ──────────────────────────────────
             BuildKillPlane(root.transform, player, camGO, hud, failScreen);
