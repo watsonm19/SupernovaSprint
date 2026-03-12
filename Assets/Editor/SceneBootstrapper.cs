@@ -135,9 +135,9 @@ public static class SceneBootstrapper
             var failGO = new GameObject("FailScreen");
             failGO.transform.SetParent(root.transform, false);
             var failScreen = failGO.AddComponent<FailScreen>();
-            var fallFailGuids = AssetDatabase.FindAssets("fall_fail t:AudioClip", new[] { "Assets/Audio/SFX" });
+            var fallFailGuids = AssetDatabase.FindAssets("downfall t:AudioClip", new[] { "Assets/Audio/SFX" });
             if (fallFailGuids.Length > 0)
-                failScreen.fallFailClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(fallFailGuids[0]));
+                failScreen.downfallClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(fallFailGuids[0]));
 
             // ── Time Fail Screen (timer expiry) ───────────────────────────────
             var timeFailGO = new GameObject("TimeFailScreen");

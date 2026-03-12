@@ -12,7 +12,7 @@ using UnityEngine.UI;
 
 public class FailScreen : MonoBehaviour
 {
-    public AudioClip fallFailClip;
+    public AudioClip downfallClip;
 
     private GameObject  _root;
     private bool        _isShowing;
@@ -64,7 +64,9 @@ public class FailScreen : MonoBehaviour
         _isShowing     = true;
         Time.timeScale = 0f;
         _root.SetActive(true);
-        if (fallFailClip != null) _audio.PlayOneShot(fallFailClip, 2f);
+        foreach (var src in Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            if (src.loop && src.isPlaying) src.Stop();
+        if (downfallClip != null) _audio.PlayOneShot(downfallClip, 2f);
     }
 
     // ── UI Builder ─────────────────────────────────────────────────────────────

@@ -258,9 +258,15 @@ public class TitleScreen : MonoBehaviour
             24f, FontStyles.Normal, -190f, 1200f, itemColor);
         MakeLabel(panel.transform, "S4", "Time Failure SFX 2  —  'Nuclear Explosion' · DRAGON-STUDIO via Pixabay",
             24f, FontStyles.Normal, -214f, 1200f, itemColor);
+        MakeLabel(panel.transform, "S5", "Fall Failure SFX  —  'Downfall 6' · SoundReality via Pixabay",
+            24f, FontStyles.Normal, -238f, 1200f, itemColor);
+        MakeLabel(panel.transform, "S6", "Level Success SFX 1  —  'Success Resolution Video Game Sound Effect Strings' · FunWithSound via Pixabay",
+            24f, FontStyles.Normal, -262f, 1400f, itemColor);
+        MakeLabel(panel.transform, "S7", "Level Success SFX 2  —  'Correct' · DRAGON-STUDIO via Pixabay",
+            24f, FontStyles.Normal, -286f, 1200f, itemColor);
 
         MakeLabel(panel.transform, "BackHint", "B / ESC  Back",
-            22f, FontStyles.Normal, -260f, 600f,
+            22f, FontStyles.Normal, -330f, 600f,
             new Color(0.28f, 0.28f, 0.28f));
 
         return panel;

@@ -14,6 +14,7 @@
 //    • A / Space restarts the scene.
 // ═════════════════════════════════════════════════════════════════════════════
 
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -28,7 +29,8 @@ public class LevelGoal : MonoBehaviour
     public SupernovaHUD hud;
 
     [Header("Audio")]
-    public AudioClip successClip;
+    public AudioClip successResolutionClip;
+    public AudioClip correctClip;
 
     // ── Private state ──────────────────────────────────────────────────────────
 
@@ -76,10 +78,25 @@ public class LevelGoal : MonoBehaviour
         _goalReached = true;
 
         if (hud != null) hud.StopTimer();
-        if (successClip != null) _audio.PlayOneShot(successClip, 2f);
+        foreach (var src in Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            if (src.loop && src.isPlaying) src.Stop();
+        StartCoroutine(PlaySuccessAudio());
 
         Time.timeScale = 0f;
         _panel.SetActive(true);
+    }
+
+    // ── Audio ──────────────────────────────────────────────────────────────────
+
+    private IEnumerator PlaySuccessAudio()
+    {
+        if (successResolutionClip != null)
+        {
+            _audio.PlayOneShot(successResolutionClip, 2f);
+            yield return new WaitForSecondsRealtime(successResolutionClip.length);
+        }
+        if (correctClip != null)
+            _audio.PlayOneShot(correctClip, 2f);
     }
 
     // ── Finish Screen ──────────────────────────────────────────────────────────
