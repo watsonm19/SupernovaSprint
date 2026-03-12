@@ -33,7 +33,7 @@ public class TitleScreen : MonoBehaviour
     private float _navCooldown;
     private const float NAV_DELAY = 0.18f;
 
-    private static readonly string[] MenuItems      = { "START GAME", "CREDITS" };
+    private static readonly string[] MenuItems      = { "START GAME", "CREDITS", "EXIT" };
     private static readonly Color    ColorSelected   = Color.white;
     private static readonly Color    ColorUnselected = new Color(0.45f, 0.45f, 0.45f);
 
@@ -107,6 +107,7 @@ public class TitleScreen : MonoBehaviour
                     StartCoroutine(LoadGameDelayed(0.72f));
                     break;
                 case 1: ShowCredits(); break;
+                case 2: Application.Quit(); break;
             }
         }
     }
@@ -192,7 +193,7 @@ public class TitleScreen : MonoBehaviour
             34f, FontStyles.Normal, 30f, 900f, new Color(0.55f, 0.55f, 0.55f));
 
         _menuLabels = new TextMeshProUGUI[MenuItems.Length];
-        float[] yOffsets = { -120f, -210f };
+        float[] yOffsets = { -120f, -210f, -300f };
         for (int i = 0; i < MenuItems.Length; i++)
             _menuLabels[i] = MakeLabel(panel.transform, MenuItems[i], MenuItems[i],
                 52f, FontStyles.Normal, yOffsets[i], 500f,
@@ -200,7 +201,7 @@ public class TitleScreen : MonoBehaviour
 
         MakeLabel(panel.transform, "Hint",
             "↑ ↓  Navigate     A / SPACE  Select",
-            22f, FontStyles.Normal, -340f, 800f,
+            22f, FontStyles.Normal, -430f, 800f,
             new Color(0.28f, 0.28f, 0.28f));
 
         return panel;

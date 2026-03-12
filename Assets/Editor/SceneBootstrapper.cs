@@ -18,6 +18,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 [InitializeOnLoad]
@@ -104,18 +105,22 @@ public static class SceneBootstrapper
             EnsureMaterialFolder();
             AssetDatabase.SaveAssets();
 
-            // ── Materials ─────────────────────────────────────────────────────
-            Material matPlayer = Mat("Mat_Player", new Color(0.90f, 0.40f, 0.10f));
-            Material matVisor  = Mat("Mat_Visor",  new Color(0.30f, 0.85f, 1.00f));
-
             // ── Scene root ────────────────────────────────────────────────────
             var root = new GameObject(ROOT_NAME);
             Undo.RegisterCreatedObjectUndo(root, "Build Supernova Test Scene");
 
-
             // ── Player ────────────────────────────────────────────────────────
-            GameObject player = BuildPlayer(root.transform, groundLayer, matPlayer, matVisor);
+            GameObject player = BuildPlayer(root.transform, groundLayer);
             player.transform.position = new Vector3(0f, 1f, 3f);
+
+            // Wire PolarityVFX glow material (lost on rebuild if not saved to prefab)
+            var polarityVFX = player.GetComponentInChildren<PolarityVFX>(true);
+            if (polarityVFX != null)
+            {
+                var matGuids = AssetDatabase.FindAssets("Mat_ThrusterGlow t:Material", new[] { "Assets/Materials" });
+                if (matGuids.Length > 0)
+                    polarityVFX.glowMaterial = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(matGuids[0]));
+            }
 
             // ── Camera ────────────────────────────────────────────────────────
             GameObject camGO = SetupCamera(root.transform, player.transform, groundLayer);
@@ -224,61 +229,12 @@ public static class SceneBootstrapper
 
     const string PLAYER_PREFAB_PATH = "Assets/Prefabs/Player/Player.prefab";
 
-    static GameObject BuildPlayer(Transform parent, int groundLayer,
-                                   Material matBody, Material matVisor)
+    static GameObject BuildPlayer(Transform parent, int groundLayer)
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PLAYER_PREFAB_PATH);
-
-        if (prefab != null)
-        {
-            // ── Instantiate from saved prefab ─────────────────────────────────
-            //  PrefabUtility keeps the prefab connection so changes to the prefab
-            //  propagate to the scene instance automatically.
-            var playerGO = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
-            playerGO.tag = "Player";
-            Debug.Log("[Supernova Sprint] Player instantiated from prefab at " + PLAYER_PREFAB_PATH);
-            return playerGO;
-        }
-
-        // ── Fallback: build placeholder from primitives ───────────────────────
-        //  Runs only when no prefab exists yet (first-time setup).
-        //  To use your own player model: save the Player as a prefab at
-        //  Assets/Prefabs/Player/Player.prefab and rebuild the scene.
-        Debug.LogWarning("[Supernova Sprint] No player prefab found at " + PLAYER_PREFAB_PATH +
-                         ". Building placeholder — drag the Player to Assets/Prefabs/Player/ to use your own model.");
-
-        var go = new GameObject("Player");
-        go.tag = "Player";
-        go.transform.SetParent(parent, false);
-
-        go.AddComponent<SupernovaSprintController>();
-
-        var rb            = go.GetComponent<Rigidbody>();
-        rb.useGravity     = false;
-        rb.linearDamping  = 0f;
-        rb.angularDamping = 0f;
-        rb.interpolation  = RigidbodyInterpolation.Interpolate;
-        rb.constraints    = RigidbodyConstraints.FreezeRotation;
-
-        var col       = go.AddComponent<CapsuleCollider>();
-        col.center    = new Vector3(0f, 1f, 0f);
-        col.height    = 2f;
-        col.radius    = 0.4f;
-        col.direction = 1;
-
-        var visual = new GameObject("Visual");
-        visual.transform.SetParent(go.transform, false);
-
-        MeshChild(visual.transform, PrimitiveType.Cylinder, "Body",
-            new Vector3(0f, 1f, 0f), new Vector3(0.5f, 1f, 0.5f), matBody);
-        MeshChild(visual.transform, PrimitiveType.Sphere, "Helmet",
-            new Vector3(0f, 2.35f, 0f), Vector3.one * 0.55f, matBody);
-        MeshChild(visual.transform, PrimitiveType.Sphere, "Visor",
-            new Vector3(0f, 2.35f, 0.23f), new Vector3(0.40f, 0.28f, 0.12f), matVisor);
-        MeshChild(visual.transform, PrimitiveType.Cube, "Jetpack",
-            new Vector3(0f, 1.3f, -0.28f), new Vector3(0.40f, 0.52f, 0.18f), matBody);
-
-        return go;
+        var prefab   = AssetDatabase.LoadAssetAtPath<GameObject>(PLAYER_PREFAB_PATH);
+        var playerGO = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+        playerGO.tag = "Player";
+        return playerGO;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -300,7 +256,11 @@ public static class SceneBootstrapper
         tpc.collisionLayers = 1 << groundLayer;
 
         var cam = camGO.GetComponent<Camera>();
-        if (cam != null) cam.farClipPlane = 10000f;
+        if (cam != null)
+        {
+            cam.farClipPlane = 10000f;
+            cam.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+        }
 
         // Start behind and above the player so the first frame looks right.
         camGO.transform.position = playerTarget.position + new Vector3(0f, 5f, -10f);
@@ -467,19 +427,7 @@ public static class SceneBootstrapper
         go.GetComponent<Renderer>().sharedMaterial = mat;
     }
 
-    // Adds a mesh-only child (collider removed — physics lives on the player root).
-    static void MeshChild(Transform parent, PrimitiveType type, string name,
-                           Vector3 localPos, Vector3 localScale, Material mat)
-    {
-        var go = GameObject.CreatePrimitive(type);
-        go.name = name;
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPos;
-        go.transform.localScale    = localScale;
-        go.GetComponent<Renderer>().sharedMaterial = mat;
-        var col = go.GetComponent<Collider>();
-        if (col != null) UnityEngine.Object.DestroyImmediate(col);
-    }
+
 
     // Creates or loads a material saved as a .mat asset.
     static Material Mat(string name, Color baseColor, Color? emission = null)

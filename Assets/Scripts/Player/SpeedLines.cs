@@ -71,8 +71,8 @@ public class SpeedLines : MonoBehaviour
         // Cyan tint above 60 m/s, white below
         var main = _ps.main;
         main.startColor = speed >= cyanThreshold
-            ? new Color(0.55f, 0.95f, 1f, 0.28f)
-            : new Color(1f,    1f,    1f, 0.22f);
+            ? new Color(0.55f, 0.95f, 1f, 1f)
+            : Color.white;
     }
 
     // ── Particle system builder ───────────────────────────────────────────────
@@ -93,7 +93,7 @@ public class SpeedLines : MonoBehaviour
         main.startLifetime   = new ParticleSystem.MinMaxCurve(minLifetime,  maxLifetime);
         main.startSpeed      = new ParticleSystem.MinMaxCurve(minStartSpeed, maxStartSpeed);
         main.startSize       = new ParticleSystem.MinMaxCurve(0.02f, 0.05f);
-        main.startColor      = new Color(1f, 1f, 1f, 0.4f);
+        main.startColor      = Color.white;
 
         // ── Emission — zero at start, Update drives it ────────────────────────
         var emission          = ps.emission;
@@ -106,7 +106,7 @@ public class SpeedLines : MonoBehaviour
         shape.angle      = 32f;
         shape.radius     = 0.4f;
 
-        // ── Colour over lifetime — fade out as particles travel ───────────────
+        // ── Colour over lifetime — fade from white to black (additive = fade out) ──
         var col = ps.colorOverLifetime;
         col.enabled = true;
         var gradient = new Gradient();

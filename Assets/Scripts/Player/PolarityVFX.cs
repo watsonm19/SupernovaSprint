@@ -38,6 +38,9 @@ public class PolarityVFX : MonoBehaviour
     [Tooltip("Local position offset from the Glow Parent. Tweak this to place the pentagon correctly.")]
     public Vector3 glowOffset = new Vector3(0f, 0.00075f, 0.000005f);
 
+    [Tooltip("Pre-saved material for the glow. Assign Mat_ThrusterGlow from Assets/Materials/.")]
+    public Material glowMaterial;
+
     // ── Private state ──────────────────────────────────────────────────────────
 
     private bool       _wasRocketMode;
@@ -99,7 +102,7 @@ public class PolarityVFX : MonoBehaviour
         var mr   = go.AddComponent<MeshRenderer>();
 
         mf.mesh     = BuildPentagonMesh();
-        mr.material = BuildGlowMaterial();
+        mr.material = glowMaterial;
 
         return go;
     }
@@ -126,8 +129,8 @@ public class PolarityVFX : MonoBehaviour
         for (int i = 0; i < sides; i++)
         {
             tris[i * 3 + 0] = 0;
-            tris[i * 3 + 1] = i + 1;
-            tris[i * 3 + 2] = (i + 1) % sides + 1;
+            tris[i * 3 + 1] = (i + 1) % sides + 1;
+            tris[i * 3 + 2] = i + 1;
         }
 
         var mesh      = new Mesh { name = "PentagonGlow" };
@@ -137,18 +140,4 @@ public class PolarityVFX : MonoBehaviour
         return mesh;
     }
 
-    private Material BuildGlowMaterial()
-    {
-        // URP Unlit keeps the cyan vivid regardless of scene lighting.
-        var shader = Shader.Find("Universal Render Pipeline/Unlit")
-                  ?? Shader.Find("Unlit/Color");
-
-        var mat = new Material(shader) { name = "ThrusterGlowMat" };
-        mat.SetColor("_BaseColor", glowColor);
-
-        // Render both faces so it's visible from any angle.
-        mat.SetFloat("_Cull", 0f);
-
-        return mat;
-    }
 }
