@@ -31,6 +31,7 @@ public class PlayerAudio : MonoBehaviour
     [Header("Volume")]
     public float footstepVolume     = 0.6f;
     public float jumpVolume         = 1f;
+    public float landVolume         = 1f;
     public float homingAttackVolume = 1f;
     public float homingHitVolume    = 1f;
     public float thrusterVolume     = 0.5f;
@@ -125,7 +126,7 @@ public class PlayerAudio : MonoBehaviour
     // ── Event callbacks ───────────────────────────────────────────────────────
 
     private void PlayJump()                  => Play(jump, jumpVolume);
-    private void PlayLand()                  => Play(land);
+    private void PlayLand()                  => Play(land, landVolume);
     private void PlayHomingAttack()          => Play(homingAttack, homingAttackVolume);
     private void PlayHomingHit()             => Play(homingHit, homingHitVolume);
     private void PlayRocketToggle(bool on)   => Play(on ? rocketToggleOn : rocketToggleOff);

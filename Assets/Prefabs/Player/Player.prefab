@@ -229,11 +229,12 @@ MonoBehaviour:
   thruster: {fileID: 8300000, guid: 9b472274e37228c4295c108120a364fb, type: 3}
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
-  footstepVolume: 1.2
-  jumpVolume: 0.6
-  homingAttackVolume: 2
-  homingHitVolume: 2.1
-  thrusterVolume: 0.85
+  footstepVolume: 1.5
+  jumpVolume: 0.65
+  landVolume: 1.5
+  homingAttackVolume: 1.8
+  homingHitVolume: 2
+  thrusterVolume: 1
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0

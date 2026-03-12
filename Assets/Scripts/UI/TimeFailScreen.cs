@@ -19,12 +19,17 @@ public class TimeFailScreen : MonoBehaviour
     // ── How many seconds before expiry the border starts appearing ────────────
     public float warningWindow = 10f;
 
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    public AudioClip aggressiveBangClip;
+    public AudioClip explosionClip;
+
     // ── Private state ─────────────────────────────────────────────────────────
 
     private Image[]     _borderImages;   // 12 strips (3 layers × 4 edges)
     private float[]     _borderFactors;  // Per-strip alpha multiplier for soft gradient
     private CanvasGroup _whiteGroup;
     private GameObject  _failRoot;
+    private AudioSource _audio;
 
     private bool _failTriggered;
     private bool _awaitingInput;
@@ -35,6 +40,11 @@ public class TimeFailScreen : MonoBehaviour
     private void Awake()
     {
         BuildUI();
+
+        _audio                     = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake         = false;
+        _audio.spatialBlend        = 0f;
+        _audio.ignoreListenerPause = true;
     }
 
     private void Update()
@@ -90,6 +100,22 @@ public class TimeFailScreen : MonoBehaviour
         // Freeze gameplay immediately — time is up, no extra movement allowed
         Time.timeScale = 0f;
 
+        // Stop music
+        foreach (var src in Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+            if (src.loop && src.isPlaying) src.Stop();
+
+        // Play bang immediately; explosion follows after bang finishes — both concurrent with fade
+        if (aggressiveBangClip != null)
+        {
+            _audio.PlayOneShot(aggressiveBangClip);
+            if (explosionClip != null)
+                StartCoroutine(PlayDelayed(explosionClip, aggressiveBangClip.length));
+        }
+        else if (explosionClip != null)
+        {
+            _audio.PlayOneShot(explosionClip);
+        }
+
         // Snap border to max so the fade-to-white starts from a clear state
         if (_borderImages != null)
             for (int i = 0; i < _borderImages.Length; i++)
@@ -110,6 +136,12 @@ public class TimeFailScreen : MonoBehaviour
         // Show FAIL text and wait for input
         if (_failRoot != null) _failRoot.SetActive(true);
         _awaitingInput = true;
+    }
+
+    private IEnumerator PlayDelayed(AudioClip clip, float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        _audio.PlayOneShot(clip);
     }
 
     // ── UI Builder ─────────────────────────────────────────────────────────────

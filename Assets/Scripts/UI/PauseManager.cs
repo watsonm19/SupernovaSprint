@@ -18,11 +18,15 @@ using UnityEngine.UI;
 
 public class PauseManager : MonoBehaviour
 {
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    public AudioClip switchClip;
+
     // ── Private state ──────────────────────────────────────────────────────────
 
-    private bool _isPaused;
-    private int  _screen;           // 0=menu, 1=controls, 2=difficulty
-    private int  _selectedIndex;
+    private bool        _isPaused;
+    private int         _screen;           // 0=menu, 1=controls, 2=difficulty
+    private int         _selectedIndex;
+    private AudioSource _audio;
 
     private GameObject         _root;
     private GameObject         _menuPanel;
@@ -49,6 +53,11 @@ public class PauseManager : MonoBehaviour
     {
         BuildUI();
         _root.SetActive(false);
+
+        _audio                     = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake         = false;
+        _audio.spatialBlend        = 0f;
+        _audio.ignoreListenerPause = true;
     }
 
     private void Update()
@@ -227,6 +236,7 @@ public class PauseManager : MonoBehaviour
     {
         for (int i = 0; i < _menuLabels.Length; i++)
             _menuLabels[i].color = i == _selectedIndex ? ColorSelected : ColorUnselected;
+        if (switchClip != null) _audio.PlayOneShot(switchClip);
     }
 
     private void RefreshDifficultySelection()
@@ -239,6 +249,7 @@ public class PauseManager : MonoBehaviour
                                        : isCurrent ? ColorActive
                                        :             ColorUnselected;
         }
+        if (switchClip != null) _audio.PlayOneShot(switchClip);
     }
 
     // ── UI Builder ─────────────────────────────────────────────────────────────
@@ -283,13 +294,13 @@ public class PauseManager : MonoBehaviour
         panel.transform.SetParent(parent, false);
 
         MakeLabel(panel.transform, "Mission", "Escape the planet before it explodes!",
-            36f, FontStyles.Normal, 290f, 800f, Color.yellow);
+            36f, FontStyles.Normal, 340f, 800f, Color.yellow);
 
         MakeLabel(panel.transform, "Title", "PAUSED",
-            88f, FontStyles.Bold, 180f, 700f, Color.white);
+            88f, FontStyles.Bold, 230f, 700f, Color.white);
 
         _menuLabels = new TextMeshProUGUI[MenuItems.Length];
-        float[] yOffsets = { 50f, -50f, -150f, -250f, -350f };
+        float[] yOffsets = { 100f, 0f, -100f, -200f, -300f };
 
         for (int i = 0; i < MenuItems.Length; i++)
             _menuLabels[i] = MakeLabel(panel.transform, MenuItems[i], MenuItems[i],

@@ -27,10 +27,14 @@ public class LevelGoal : MonoBehaviour
     [Tooltip("The SupernovaHUD in the scene — timer is frozen when the goal is reached.")]
     public SupernovaHUD hud;
 
+    [Header("Audio")]
+    public AudioClip successClip;
+
     // ── Private state ──────────────────────────────────────────────────────────
 
-    private bool       _goalReached;
-    private GameObject _panel;
+    private bool        _goalReached;
+    private GameObject  _panel;
+    private AudioSource _audio;
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -38,6 +42,11 @@ public class LevelGoal : MonoBehaviour
     {
         GetComponent<Collider>().isTrigger = true;
         BuildFinishScreen();
+
+        _audio                     = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake         = false;
+        _audio.spatialBlend        = 0f;
+        _audio.ignoreListenerPause = true;
     }
 
     private void Update()
@@ -67,6 +76,7 @@ public class LevelGoal : MonoBehaviour
         _goalReached = true;
 
         if (hud != null) hud.StopTimer();
+        if (successClip != null) _audio.PlayOneShot(successClip, 2f);
 
         Time.timeScale = 0f;
         _panel.SetActive(true);

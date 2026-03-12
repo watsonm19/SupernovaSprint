@@ -134,11 +134,21 @@ public static class SceneBootstrapper
             var failGO = new GameObject("FailScreen");
             failGO.transform.SetParent(root.transform, false);
             var failScreen = failGO.AddComponent<FailScreen>();
+            var fallFailGuids = AssetDatabase.FindAssets("fall_fail t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (fallFailGuids.Length > 0)
+                failScreen.fallFailClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(fallFailGuids[0]));
 
             // ── Time Fail Screen (timer expiry) ───────────────────────────────
             var timeFailGO = new GameObject("TimeFailScreen");
             timeFailGO.transform.SetParent(root.transform, false);
-            hud.timeFailScreen = timeFailGO.AddComponent<TimeFailScreen>();
+            var timeFailScreen = timeFailGO.AddComponent<TimeFailScreen>();
+            hud.timeFailScreen = timeFailScreen;
+            var bangGuids = AssetDatabase.FindAssets("aggressive_bang t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (bangGuids.Length > 0)
+                timeFailScreen.aggressiveBangClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(bangGuids[0]));
+            var explosionGuids = AssetDatabase.FindAssets("explosion t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (explosionGuids.Length > 0)
+                timeFailScreen.explosionClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(explosionGuids[0]));
 
             // ── Kill plane / respawn manager ──────────────────────────────────
             BuildKillPlane(root.transform, player, camGO, hud, failScreen);
@@ -164,13 +174,16 @@ public static class SceneBootstrapper
             // ── Pause Manager ─────────────────────────────────────────────────
             var pauseGO = new GameObject("PauseManager");
             pauseGO.transform.SetParent(root.transform, false);
-            pauseGO.AddComponent<PauseManager>();
+            var pauseManager = pauseGO.AddComponent<PauseManager>();
+            var switchGuids = AssetDatabase.FindAssets("switch t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (switchGuids.Length > 0)
+                pauseManager.switchClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(switchGuids[0]));
 
             // ── Earthquake intro shake ─────────────────────────────────────────
             var eqGO = new GameObject("EarthquakeIntro");
             eqGO.transform.SetParent(root.transform, false);
             var eq = eqGO.AddComponent<EarthquakeIntro>();
-            eq.earthquakeVolume = 1.25f;
+            eq.earthquakeVolume = 5f;
             var eqGuids = AssetDatabase.FindAssets("earthquake t:AudioClip", new[] { "Assets/Audio/SFX" });
             if (eqGuids.Length > 0)
                 eq.earthquakeClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(eqGuids[0]));
@@ -590,7 +603,14 @@ public static class SceneBootstrapper
             camGO.AddComponent<AudioListener>();
 
             // ── TitleScreen controller ────────────────────────────────────────
-            new GameObject("TitleScreen").AddComponent<TitleScreen>();
+            var titleScreenGO = new GameObject("TitleScreen");
+            var titleScreen   = titleScreenGO.AddComponent<TitleScreen>();
+            var titleSwitchGuids = AssetDatabase.FindAssets("switch t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (titleSwitchGuids.Length > 0)
+                titleScreen.switchClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(titleSwitchGuids[0]));
+            var startGameGuids = AssetDatabase.FindAssets("start_game t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (startGameGuids.Length > 0)
+                titleScreen.startGameClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(startGameGuids[0]));
 
             // ── Save ─────────────────────────────────────────────────────────
             EditorSceneManager.SaveScene(titleScene, TITLE_SCENE_PATH);

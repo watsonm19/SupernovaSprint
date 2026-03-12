@@ -12,8 +12,11 @@ using UnityEngine.UI;
 
 public class FailScreen : MonoBehaviour
 {
-    private GameObject _root;
-    private bool       _isShowing;
+    public AudioClip fallFailClip;
+
+    private GameObject  _root;
+    private bool        _isShowing;
+    private AudioSource _audio;
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -21,6 +24,11 @@ public class FailScreen : MonoBehaviour
     {
         BuildUI();
         _root.SetActive(false);
+
+        _audio                      = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake          = false;
+        _audio.spatialBlend         = 0f;
+        _audio.ignoreListenerPause  = true;
     }
 
     private void Update()
@@ -56,6 +64,7 @@ public class FailScreen : MonoBehaviour
         _isShowing     = true;
         Time.timeScale = 0f;
         _root.SetActive(true);
+        if (fallFailClip != null) _audio.PlayOneShot(fallFailClip, 2f);
     }
 
     // ── UI Builder ─────────────────────────────────────────────────────────────

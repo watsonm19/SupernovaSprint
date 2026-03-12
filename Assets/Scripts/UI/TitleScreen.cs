@@ -16,10 +16,15 @@ using UnityEngine.UI;
 
 public class TitleScreen : MonoBehaviour
 {
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    public AudioClip switchClip;
+    public AudioClip startGameClip;
+
     // ── Private state ──────────────────────────────────────────────────────────
 
-    private int  _selectedIndex;
-    private bool _onCredits;
+    private int         _selectedIndex;
+    private bool        _onCredits;
+    private AudioSource _audio;
 
     private GameObject        _titlePanel;
     private GameObject        _creditsPanel;
@@ -37,6 +42,10 @@ public class TitleScreen : MonoBehaviour
     private void Awake()
     {
         BuildUI();
+
+        _audio             = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake = false;
+        _audio.spatialBlend = 0f;
     }
 
     private void Update()
@@ -93,10 +102,19 @@ public class TitleScreen : MonoBehaviour
         {
             switch (_selectedIndex)
             {
-                case 0: SceneManager.LoadScene(1); break;
-                case 1: ShowCredits();             break;
+                case 0:
+                    if (startGameClip != null) _audio.PlayOneShot(startGameClip);
+                    StartCoroutine(LoadGameDelayed(0.8f));
+                    break;
+                case 1: ShowCredits(); break;
             }
         }
+    }
+
+    private System.Collections.IEnumerator LoadGameDelayed(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        SceneManager.LoadScene(1);
     }
 
     // ── Screen switching ───────────────────────────────────────────────────────
@@ -121,6 +139,7 @@ public class TitleScreen : MonoBehaviour
     {
         for (int i = 0; i < _menuLabels.Length; i++)
             _menuLabels[i].color = i == _selectedIndex ? ColorSelected : ColorUnselected;
+        if (switchClip != null) _audio.PlayOneShot(switchClip);
     }
 
     // ── UI Builder ─────────────────────────────────────────────────────────────
