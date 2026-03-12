@@ -230,7 +230,9 @@ MonoBehaviour:
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
   footstepVolume: 1.2
-  jumpVolume: 0.5
+  jumpVolume: 0.6
+  homingAttackVolume: 2
+  homingHitVolume: 2.1
   thrusterVolume: 0.85
 --- !u!1 &4161311611875934899
 GameObject:

@@ -126,6 +126,9 @@ public static class SceneBootstrapper
 
             // ── HUD ───────────────────────────────────────────────────────────
             SupernovaHUD hud = BuildHUD(root.transform, player);
+            var tickGuids = AssetDatabase.FindAssets("clock_tick t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (tickGuids.Length > 0)
+                hud.tickClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(tickGuids[0]));
 
             // ── Fail Screen (kill plane) ──────────────────────────────────────
             var failGO = new GameObject("FailScreen");

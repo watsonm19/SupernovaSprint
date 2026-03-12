@@ -86,6 +86,14 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("Oscillations per second of the red flash.")]
     public float flashFrequency = 2f;
 
+    // ── Tick sound ────────────────────────────────────────────────────────────
+
+    [Header("Tick Sound")]
+    public AudioClip tickClip;
+    [Range(0f, 1f)] public float tickVolume = 1f;
+    [Tooltip("Seconds remaining at which the tick sound begins.")]
+    public float tickThreshold = 10f;
+
     // ── Private state ─────────────────────────────────────────────────────────
 
     private float   _remaining;         // Seconds left on the countdown
@@ -93,6 +101,8 @@ public class SupernovaHUD : MonoBehaviour
     private bool    _hasStarted;        // Latched — prevents re-triggering mid-run
     private bool    _expired;           // True once timer hit zero (prevent double-restart)
     private Vector3 _speedBaseScale;    // Original localScale of speedText transform
+    private int     _lastTickSecond;    // Tracks which second we last ticked on
+    private AudioSource _audioSource;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -103,6 +113,12 @@ public class SupernovaHUD : MonoBehaviour
 
         // Initialise remaining time from current difficulty
         _remaining = GameDifficulty.TimeLimit;
+
+        _lastTickSecond = -1;
+
+        _audioSource             = gameObject.AddComponent<AudioSource>();
+        _audioSource.playOnAwake = false;
+        _audioSource.spatialBlend = 0f;
 
         // Show the full timer immediately so the canvas doesn't flash empty.
         RefreshTimerDisplay();
@@ -139,6 +155,17 @@ public class SupernovaHUD : MonoBehaviour
             if (timeFailScreen != null)
                 timeFailScreen.TriggerFail();
             return;
+        }
+
+        // Tick sound during last N seconds — fires once per whole second
+        if (tickClip != null && _remaining <= tickThreshold)
+        {
+            int currentSecond = Mathf.CeilToInt(_remaining);
+            if (currentSecond != _lastTickSecond)
+            {
+                _lastTickSecond = currentSecond;
+                _audioSource.PlayOneShot(tickClip, tickVolume);
+            }
         }
 
         // Drive the edge-border warning
