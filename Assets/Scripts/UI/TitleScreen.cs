@@ -212,19 +212,54 @@ public class TitleScreen : MonoBehaviour
         panel.transform.SetParent(parent, false);
 
         MakeLabel(panel.transform, "Header", "Credits",
-            72f, FontStyles.Bold, 240f, 700f, Color.white);
+            72f, FontStyles.Bold, 460f, 700f, Color.white);
 
         MakeLabel(panel.transform, "GameName", "Supernova Sprint",
-            56f, FontStyles.Bold, 120f, 1000f, Color.white);
+            56f, FontStyles.Bold, 360f, 1000f, Color.white);
 
         MakeLabel(panel.transform, "Tagline", "A High-Speed Project by Mark Watson",
-            34f, FontStyles.Normal, 30f, 1000f, new Color(0.65f, 0.65f, 0.65f));
+            34f, FontStyles.Normal, 270f, 1000f, new Color(0.65f, 0.65f, 0.65f));
 
         MakeLabel(panel.transform, "Role1", "Programming & Design  —  Mark Watson",
-            30f, FontStyles.Normal, -60f, 1000f, new Color(0.5f, 0.5f, 0.5f));
+            30f, FontStyles.Normal, 180f, 1000f, new Color(0.5f, 0.5f, 0.5f));
+
+        // ── Visuals & Environment ──────────────────────────────────────────────
+        var catColor  = new Color(1f, 0.85f, 0.3f);
+        var itemColor = new Color(0.55f, 0.55f, 0.55f);
+
+        MakeLabel(panel.transform, "CatVisuals", "VISUALS & ENVIRONMENT",
+            26f, FontStyles.Bold, 122f, 1100f, catColor);
+        MakeLabel(panel.transform, "V1", "Character  —  Stylized Astronaut · PULSAR BYTES (Asset Store)",
+            24f, FontStyles.Normal, 94f, 1200f, itemColor);
+        MakeLabel(panel.transform, "V2", "Starfield  —  Real Stars Skybox Lite · Geoff Dallimore (Asset Store)",
+            24f, FontStyles.Normal, 70f, 1200f, itemColor);
+        MakeLabel(panel.transform, "V3", "Ground Textures  —  cuboy's grass pack Vol. 1 - Low poly textures *modified* · cuboy (itch.io)",
+            24f, FontStyles.Normal, 46f, 1200f, itemColor);
+        MakeLabel(panel.transform, "V4", "Nature Assets  —  Little Low Poly World - LITE SRP/URP · RRFreelance (Asset Store)",
+            24f, FontStyles.Normal, 22f, 1200f, itemColor);
+        MakeLabel(panel.transform, "V5", "Spaceship  —  FREE Low Poly Spaceships · Gastikara (Asset Store)",
+            24f, FontStyles.Normal, -2f, 1200f, itemColor);
+
+        // ── Music ─────────────────────────────────────────────────────────────
+        MakeLabel(panel.transform, "CatMusic", "MUSIC",
+            26f, FontStyles.Bold, -44f, 1100f, catColor);
+        MakeLabel(panel.transform, "M1", "'Off The Wall (Upbeat Rock)'  —  AlexGrohl via Pixabay",
+            24f, FontStyles.Normal, -72f, 1200f, itemColor);
+
+        // ── Sound Effects ─────────────────────────────────────────────────────
+        MakeLabel(panel.transform, "CatSFX", "SOUND EFFECTS",
+            26f, FontStyles.Bold, -114f, 1100f, catColor);
+        MakeLabel(panel.transform, "S1", "General SFX  —  Various Sound Packs · Kenney (kenney.nl)",
+            24f, FontStyles.Normal, -142f, 1200f, itemColor);
+        MakeLabel(panel.transform, "S2", "Earthquake SFX  —  'earth rumble' · Reitanna via Pixabay",
+            24f, FontStyles.Normal, -166f, 1200f, itemColor);
+        MakeLabel(panel.transform, "S3", "Time Failure SFX 1  —  'aggressive bang' · unknown via Pixabay",
+            24f, FontStyles.Normal, -190f, 1200f, itemColor);
+        MakeLabel(panel.transform, "S4", "Time Failure SFX 2  —  'Nuclear Explosion' · DRAGON-STUDIO via Pixabay",
+            24f, FontStyles.Normal, -214f, 1200f, itemColor);
 
         MakeLabel(panel.transform, "BackHint", "B / ESC  Back",
-            22f, FontStyles.Normal, -320f, 600f,
+            22f, FontStyles.Normal, -260f, 600f,
             new Color(0.28f, 0.28f, 0.28f));
 
         return panel;
