@@ -179,6 +179,11 @@ public static class SceneBootstrapper
             if (switchGuids.Length > 0)
                 pauseManager.switchClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(switchGuids[0]));
 
+            // ── Mission statement ─────────────────────────────────────────────
+            var msGO = new GameObject("MissionStatement");
+            msGO.transform.SetParent(root.transform, false);
+            msGO.AddComponent<MissionStatement>();
+
             // ── Earthquake intro shake ─────────────────────────────────────────
             var eqGO = new GameObject("EarthquakeIntro");
             eqGO.transform.SetParent(root.transform, false);
