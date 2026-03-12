@@ -104,7 +104,7 @@ public class TitleScreen : MonoBehaviour
             {
                 case 0:
                     if (startGameClip != null) _audio.PlayOneShot(startGameClip);
-                    StartCoroutine(LoadGameDelayed(0.8f));
+                    StartCoroutine(LoadGameDelayed(0.72f));
                     break;
                 case 1: ShowCredits(); break;
             }
