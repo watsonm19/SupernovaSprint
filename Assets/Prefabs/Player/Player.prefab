@@ -46,6 +46,7 @@ GameObject:
   - component: {fileID: 2413351405852108}
   - component: {fileID: 8049350017995390649}
   - component: {fileID: 3203913522799093220}
+  - component: {fileID: 6223953827598293972}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -67,6 +68,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 971701413174335510}
+  - {fileID: 6692284643147825851}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &7966129489288123718
@@ -204,6 +206,32 @@ MonoBehaviour:
   glowColor: {r: 0, g: 1, b: 1, a: 1}
   glowRadius: 0.0002
   glowOffset: {x: 0, y: -0.00075, z: 0.000005}
+--- !u!114 &6223953827598293972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3881487371748999295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d074aaa12c9bc1140a23f88dc4adb3e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAudio
+  controller: {fileID: 0}
+  footstep: {fileID: 8300000, guid: 10a3089353d47384eb2bf555fee41d1b, type: 3}
+  jump: {fileID: 8300000, guid: 98744eba78d7f6a4291ed7d14c27c114, type: 3}
+  land: {fileID: 8300000, guid: e67a69e3b59108f4fa787740b17e89cc, type: 3}
+  homingAttack: {fileID: 8300000, guid: 813b477ffc12e9a45a13e79be619494e, type: 3}
+  homingHit: {fileID: 8300000, guid: 40cb0ded54087c749b35c033bad6d969, type: 3}
+  rocketToggleOn: {fileID: 8300000, guid: 01ffb57cb1c4b5d428a139418ca4fed6, type: 3}
+  rocketToggleOff: {fileID: 8300000, guid: 9f402db96a559124e829407d11d88da2, type: 3}
+  thruster: {fileID: 8300000, guid: 9b472274e37228c4295c108120a364fb, type: 3}
+  footstepIntervalSlow: 0.92
+  footstepIntervalFast: 0.4
+  footstepVolume: 1.2
+  jumpVolume: 0.5
+  thrusterVolume: 0.85
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0
@@ -5040,6 +5068,62 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!1 &9161127699313678010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6692284643147825851}
+  - component: {fileID: 1369968368036785828}
+  m_Layer: 0
+  m_Name: SpeedLines
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6692284643147825851
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9161127699313678010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3965392712995856970}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1369968368036785828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9161127699313678010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0906fd9f61e787242a86f589b8dba23d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpeedLines
+  controller: {fileID: 7168267401702996782}
+  speedThreshold: 55
+  fullSpeed: 62
+  maxEmissionRate: 80
+  cyanThreshold: 62
+  emitterPosition: {x: 0.1, y: 1, z: -1}
+  velocityScale: -1
+  lengthScale: 0.01
+  minStartSpeed: 5
+  maxStartSpeed: 10
+  minLifetime: 0.004
+  maxLifetime: 0.006
 --- !u!1001 &971701413174723224
 PrefabInstance:
   m_ObjectHideFlags: 0

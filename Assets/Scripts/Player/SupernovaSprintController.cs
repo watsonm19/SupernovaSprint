@@ -160,6 +160,7 @@ public class SupernovaSprintController : MonoBehaviour
 
     // Ground
     private bool    isGrounded;
+    private bool    _wasGrounded;
     private Vector3 groundNormal   = Vector3.up;
     private float   coyoteTimer;
     private float   jumpGroundIgnoreTimer; // Prevents re-grounding immediately after a jump
@@ -182,6 +183,13 @@ public class SupernovaSprintController : MonoBehaviour
 
     // Public read-only diagnostics (useful for a HUD speed counter)
     [System.NonSerialized] public float currentSpeed;
+
+    // Audio events — subscribe in PlayerAudio
+    [System.NonSerialized] public System.Action        OnJump;
+    [System.NonSerialized] public System.Action        OnLand;
+    [System.NonSerialized] public System.Action        OnHomingAttack;
+    [System.NonSerialized] public System.Action        OnHomingHit;
+    [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
 
     // Set true by LoopBoostTrigger to allow temporary overspeed through a loop.
     // Self-clears in ClampSpeed() once gravity slows the player to topSpeed,
@@ -347,6 +355,7 @@ public class SupernovaSprintController : MonoBehaviour
             {
                 isRocketMode = !isRocketMode;
                 ApplyPolarityMode();
+                OnRocketToggle?.Invoke(isRocketMode);
             }
         }
 
@@ -455,6 +464,8 @@ public class SupernovaSprintController : MonoBehaviour
             state = PlayerState.Airborne;
         }
 
+        if (isGrounded && !_wasGrounded) OnLand?.Invoke();
+        _wasGrounded     = isGrounded;
         isGroundedPublic = isGrounded;
         isHomingPublic   = state == PlayerState.HomingAttack;
     }
@@ -647,6 +658,7 @@ public class SupernovaSprintController : MonoBehaviour
 
         isJumping     = true;
         jumpHoldTimer = 0f;
+        OnJump?.Invoke();
     }
 
     private void HandleAirJump()
@@ -771,6 +783,7 @@ public class SupernovaSprintController : MonoBehaviour
         }
 
         homingAvailable = false;
+        OnHomingAttack?.Invoke();
 
         if (best == null)
         {
@@ -819,6 +832,7 @@ public class SupernovaSprintController : MonoBehaviour
                 // Notify the target — it handles its own VFX, score, and destruction.
                 // We use DontRequireReceiver so targets without the handler don't throw.
                 target.SendMessage("OnHomingHit", SendMessageOptions.DontRequireReceiver);
+                OnHomingHit?.Invoke();
 
                 // Bounce up — gives the player air to chain the next homing attack
                 rb.linearVelocity     = Vector3.up * homingBounceForce;

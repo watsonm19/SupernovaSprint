@@ -149,47 +149,6 @@ public static class SceneBootstrapper
                 ctrl.visualModel     = player.transform.Find("Visual");
                 ctrl.groundLayers    = 1 << groundLayer;
 
-                // ── Normal Mode physics — canonical values ─────────────────────
-                //  Set explicitly so a rebuild always produces the correct state
-                //  regardless of what is serialised in the player prefab.
-                ctrl.topSpeed               = 25f;
-                ctrl.acceleration           = 35f;
-                ctrl.slopeForce             = 40f;
-                ctrl.turnSpeed              = 12f;
-                ctrl.jumpForce              = 15f;
-                ctrl.jumpHoldForce          = 8f;
-                ctrl.jumpHoldTime           = 0.2f;
-                ctrl.coyoteTime             = 0.12f;
-                ctrl.jumpBufferTime         = 0.15f;
-                ctrl.homingRange            = 15f;
-                ctrl.homingSpeed            = 40f;
-                ctrl.homingBounceForce      = 12f;
-                ctrl.homingFreezeFrameDuration = 0.05f;
-                ctrl.homingDashDuration     = 0.35f;
-                ctrl.gravityForce           = 25f;
-                ctrl.groundStickyForce      = 15f;
-                ctrl.groundCheckRadius      = 0.4f;
-                ctrl.groundCheckDistance    = 1.1f;
-                ctrl.surfaceAlignSpeed      = 12f;
-                ctrl.brakeFriction          = 10f;
-                ctrl.brakeFrictionAngle     = 45f;
-                ctrl.rollingFriction        = 0.5f;
-                ctrl.airControlFactor       = 0.25f;
-                ctrl.maxAirStrafeSpeed      = 20f;
-                ctrl.maxLeanAngle           = 25f;
-                ctrl.leanSpeed              = 8f;
-
-                // ── Rocket Mode config ─────────────────────────────────────────
-                ctrl.rocketTopSpeed          = 50f;
-                ctrl.rocketAcceleration      = 70f;
-                ctrl.rocketBrakeFriction     = 1f;
-                ctrl.rocketRollingFriction   = 0.1f;
-                ctrl.rocketGroundStickyForce = 5f;
-                ctrl.rocketSurfaceAlignSpeed = 3f;
-                ctrl.normalFOV               = 60f;
-                ctrl.rocketFOV               = 75f;
-                ctrl.fovLerpSpeed            = 8f;
-
                 EditorUtility.SetDirty(player);
             }
             else
@@ -207,7 +166,11 @@ public static class SceneBootstrapper
             // ── Earthquake intro shake ─────────────────────────────────────────
             var eqGO = new GameObject("EarthquakeIntro");
             eqGO.transform.SetParent(root.transform, false);
-            eqGO.AddComponent<EarthquakeIntro>();
+            var eq = eqGO.AddComponent<EarthquakeIntro>();
+            eq.earthquakeVolume = 1.25f;
+            var eqGuids = AssetDatabase.FindAssets("earthquake t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (eqGuids.Length > 0)
+                eq.earthquakeClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(eqGuids[0]));
 
             // ── Lighting ──────────────────────────────────────────────────────
             SetupLighting();
