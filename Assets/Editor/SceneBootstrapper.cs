@@ -107,15 +107,11 @@ public static class SceneBootstrapper
             // ── Materials ─────────────────────────────────────────────────────
             Material matPlayer = Mat("Mat_Player", new Color(0.90f, 0.40f, 0.10f));
             Material matVisor  = Mat("Mat_Visor",  new Color(0.30f, 0.85f, 1.00f));
-            Material matTarget = Mat("Mat_Target", new Color(1.00f, 0.85f, 0.05f),
-                                      emission: new Color(0.8f, 0.6f, 0f) * 2f);
 
             // ── Scene root ────────────────────────────────────────────────────
             var root = new GameObject(ROOT_NAME);
             Undo.RegisterCreatedObjectUndo(root, "Build Supernova Test Scene");
 
-            // ── Homing targets ────────────────────────────────────────────────
-            BuildTargets(root.transform, matTarget);
 
             // ── Player ────────────────────────────────────────────────────────
             GameObject player = BuildPlayer(root.transform, groundLayer, matPlayer, matVisor);
@@ -219,35 +215,6 @@ public static class SceneBootstrapper
 
     // ─────────────────────────────────────────────────────────────────────────
     //  TRACK
-    // ─────────────────────────────────────────────────────────────────────────
-    //  TARGETS
-    // ─────────────────────────────────────────────────────────────────────────
-
-    static void BuildTargets(Transform parent, Material mat)
-    {
-        var tRoot = new GameObject("Targets");
-        tRoot.transform.SetParent(parent, false);
-
-        Vector3[] positions =
-        {
-            new Vector3( 0f, 3f,  85f),
-            new Vector3( 3f, 5f, 100f),
-            new Vector3(-3f, 4f, 115f),
-            new Vector3( 2f, 6f, 130f),
-        };
-
-        for (int i = 0; i < positions.Length; i++)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = $"Target_{i}";
-            go.tag  = "Target";
-            go.transform.SetParent(tRoot.transform, true);
-            go.transform.position   = positions[i];
-            go.transform.localScale = Vector3.one * 1.2f;
-            go.GetComponent<Renderer>().sharedMaterial = mat;
-        }
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     //  PLAYER
     // ─────────────────────────────────────────────────────────────────────────
