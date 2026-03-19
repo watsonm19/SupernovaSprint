@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public static class AstronautAnimatorBuilder
@@ -33,7 +34,7 @@ public static class AstronautAnimatorBuilder
             .Where(c => !c.name.StartsWith("__preview__"))
             .ToDictionary(c => c.name);
 
-        string[] required = { "Idle", "Walk", "Run", "Jump_start", "Float", "Flip" };
+        string[] required = { "Idle", "Walk", "Run", "Jump_start", "Jump_loop", "Flip" };
         foreach (string name in required)
         {
             if (!clips.ContainsKey(name))
@@ -63,7 +64,7 @@ public static class AstronautAnimatorBuilder
         var walk      = AddState(sm, "Walk",       clips["Walk"]);
         var run       = AddState(sm, "Run",        clips["Run"]);
         var jumpStart = AddState(sm, "JumpStart",  clips["Jump_start"]);
-        var airFloat  = AddState(sm, "Float",      clips["Float"]);
+        var airFloat  = AddState(sm, "Float",      clips["Jump_loop"]);
         var flip      = AddState(sm, "Flip",       clips["Flip"]);
 
         sm.defaultState = idle;
@@ -121,8 +122,20 @@ public static class AstronautAnimatorBuilder
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"[AstronautAnimatorBuilder] Controller saved to {OUTPUT_PATH}. " +
-                  "Assign it to the Animator on your Visual child.");
+        // ── Auto-assign to Animators in the scene using this controller ────
+        var reloaded = AssetDatabase.LoadAssetAtPath<AnimatorController>(OUTPUT_PATH);
+        foreach (var animator in Object.FindObjectsByType<Animator>(FindObjectsSortMode.None))
+        {
+            if (animator.runtimeAnimatorController == null ||
+                AssetDatabase.GetAssetPath(animator.runtimeAnimatorController) == OUTPUT_PATH)
+            {
+                animator.runtimeAnimatorController = reloaded;
+                EditorUtility.SetDirty(animator);
+            }
+        }
+        EditorSceneManager.SaveOpenScenes();
+
+        Debug.Log($"[AstronautAnimatorBuilder] Controller saved to {OUTPUT_PATH}.");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
