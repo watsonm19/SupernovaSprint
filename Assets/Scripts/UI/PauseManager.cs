@@ -402,13 +402,13 @@ public class PauseManager : MonoBehaviour
         panel.transform.SetParent(parent, false);
 
         MakeLabel(panel.transform, "Title", "DIFFICULTY",
-            72f, FontStyles.Bold, 230f, 900f, Color.white);
+            72f, FontStyles.Bold, 290f, 900f, Color.white);
 
         MakeLabel(panel.transform, "Sub", "Select a difficulty and press A / SPACE to apply",
-            24f, FontStyles.Normal, 150f, 900f, new Color(0.5f, 0.5f, 0.5f));
+            24f, FontStyles.Normal, 210f, 900f, new Color(0.5f, 0.5f, 0.5f));
 
         _difficultyLabels = new TextMeshProUGUI[GameDifficulty.Names.Length];
-        float startY  = 60f;
+        float startY  = 120f;
         float spacing = 72f;
 
         for (int i = 0; i < GameDifficulty.Names.Length; i++)
