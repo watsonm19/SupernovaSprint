@@ -34,8 +34,10 @@ public class PauseManager : MonoBehaviour
     private GameObject         _difficultyPanel;
     private TextMeshProUGUI[]  _menuLabels;
     private TextMeshProUGUI[]  _difficultyLabels;
+    private TextMeshProUGUI    _checkpointToggleLabel;
 
     private float _navCooldown;
+    private bool  _checkpointsEnabledOnDifficultyOpen;
     private const float NAV_DELAY = 0.18f;
 
     private const int SCREEN_MENU       = 0;
@@ -102,22 +104,34 @@ public class PauseManager : MonoBehaviour
         // ── Sub-screen back ───────────────────────────────────────────────────
         if (_screen != SCREEN_MENU)
         {
-            if (back) ShowMenu();
+            if (back)
+            {
+                if (_screen == SCREEN_DIFFICULTY &&
+                    GameDifficulty.CheckpointsEnabled != _checkpointsEnabledOnDifficultyOpen)
+                {
+                    Time.timeScale = 1f;
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                    return;
+                }
+                ShowMenu();
+            }
 
             // Difficulty screen: navigate and select
             if (_screen == SCREEN_DIFFICULTY)
             {
+                bool checkpointToggleLocked = GameDifficulty.Current == GameDifficulty.RocketSprintIndex;
+                int difficultyItemCount = GameDifficulty.Names.Length + (checkpointToggleLocked ? 0 : 1);
                 if (_navCooldown <= 0f)
                 {
                     if (up)
                     {
-                        _selectedIndex = (_selectedIndex - 1 + GameDifficulty.Names.Length) % GameDifficulty.Names.Length;
+                        _selectedIndex = (_selectedIndex - 1 + difficultyItemCount) % difficultyItemCount;
                         RefreshDifficultySelection();
                         _navCooldown = NAV_DELAY;
                     }
                     else if (down)
                     {
-                        _selectedIndex = (_selectedIndex + 1) % GameDifficulty.Names.Length;
+                        _selectedIndex = (_selectedIndex + 1) % difficultyItemCount;
                         RefreshDifficultySelection();
                         _navCooldown = NAV_DELAY;
                     }
@@ -125,10 +139,18 @@ public class PauseManager : MonoBehaviour
 
                 if (confirm)
                 {
-                    GameDifficulty.Current = _selectedIndex;
-                    // Restart so the new time limit takes effect immediately
-                    Time.timeScale = 1f;
-                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                    if (_selectedIndex == GameDifficulty.Names.Length)
+                    {
+                        // Checkpoint toggle — flip and refresh, no restart needed
+                        GameDifficulty.CheckpointsEnabled = !GameDifficulty.CheckpointsEnabled;
+                        RefreshDifficultySelection();
+                    }
+                    else
+                    {
+                        GameDifficulty.Current = _selectedIndex;
+                        Time.timeScale = 1f;
+                        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                    }
                 }
             }
 
@@ -217,6 +239,7 @@ public class PauseManager : MonoBehaviour
         _controlsPanel.SetActive(false);
         _difficultyPanel.SetActive(true);
         _selectedIndex = GameDifficulty.Current;
+        _checkpointsEnabledOnDifficultyOpen = GameDifficulty.CheckpointsEnabled;
         RefreshDifficultySelection();
     }
 
@@ -249,8 +272,21 @@ public class PauseManager : MonoBehaviour
                                        : isCurrent ? ColorActive
                                        :             ColorUnselected;
         }
+
+        if (_checkpointToggleLabel != null)
+        {
+            _checkpointToggleLabel.text  = CheckpointToggleText();
+            _checkpointToggleLabel.color = _selectedIndex == GameDifficulty.Names.Length
+                ? ColorSelected : ColorUnselected;
+        }
+
         if (switchClip != null) _audio.PlayOneShot(switchClip);
     }
+
+    private static string CheckpointToggleText() =>
+        GameDifficulty.Current == GameDifficulty.RocketSprintIndex
+            ? "[ ]  Checkpoints  (unavailable on Rocket Sprint)"
+            : GameDifficulty.CheckpointsEnabled ? "[X]  Checkpoints" : "[ ]  Checkpoints";
 
     // ── UI Builder ─────────────────────────────────────────────────────────────
 
@@ -386,8 +422,13 @@ public class PauseManager : MonoBehaviour
                 isCurrent ? ColorActive : ColorUnselected);
         }
 
+        float toggleY = startY - GameDifficulty.Names.Length * spacing - 30f;
+        _checkpointToggleLabel = MakeLabel(panel.transform, "CheckpointToggle",
+            CheckpointToggleText(),
+            40f, FontStyles.Normal, toggleY, 700f, ColorUnselected);
+
         MakeLabel(panel.transform, "BackHint", "B / ESC  Back     A / SPACE  Apply & Restart",
-            22f, FontStyles.Normal, -290f, 900f,
+            22f, FontStyles.Normal, -430f, 900f,
             new Color(0.4f, 0.4f, 0.4f));
 
         return panel;

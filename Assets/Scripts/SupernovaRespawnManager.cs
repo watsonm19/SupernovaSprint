@@ -122,21 +122,28 @@ public class SupernovaRespawnManager : MonoBehaviour
     private void TriggerDeath()
     {
         if (_isRespawning) return;
-        _isRespawning = true;    // Prevent repeated calls
+        _isRespawning = true;
 
-        if (hud != null) hud.StopTimer();
+        if (thirdPersonCamera != null)
+            thirdPersonCamera.StartShake(shakeDuration, shakeMagnitude);
 
-        if (failScreen != null)
+        if (CheckpointManager.HasCheckpoint)
         {
-            if (thirdPersonCamera != null)
-                thirdPersonCamera.StartShake(shakeDuration, shakeMagnitude);
-            failScreen.Show();
+            // Checkpoint active — teleport back, keep the timer running.
+            StartCoroutine(CheckpointRespawnSequence());
         }
         else
         {
-            // Fallback: respawn if no fail screen is wired up
-            _isRespawning = false;
-            Respawn();
+            // No checkpoint — stop the timer and show the fail screen.
+            if (hud != null) hud.StopTimer();
+
+            if (failScreen != null)
+                failScreen.Show();
+            else
+            {
+                _isRespawning = false;
+                Respawn();
+            }
         }
     }
 
@@ -153,7 +160,50 @@ public class SupernovaRespawnManager : MonoBehaviour
         StartCoroutine(RespawnSequence());
     }
 
-    // ── Sequence ──────────────────────────────────────────────────────────────
+    // ── Sequences ─────────────────────────────────────────────────────────────
+
+    private IEnumerator CheckpointRespawnSequence()
+    {
+        // Fade to black
+        if (fadeCanvasGroup != null)
+            yield return StartCoroutine(Fade(0f, 1f, fadeDuration));
+        else
+            yield return new WaitForSeconds(Mathf.Max(shakeDuration * 0.5f, 0.15f));
+
+        // Freeze player
+        if (playerController != null) playerController.enabled = false;
+        if (_rb != null)
+        {
+            _rb.linearVelocity  = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
+        }
+        if (playerController != null) playerController.currentSpeed = 0f;
+
+        // Teleport to checkpoint
+        if (_rb != null)
+        {
+            _rb.position = CheckpointManager.Position;
+            _rb.rotation = CheckpointManager.Rotation;
+            Physics.SyncTransforms();
+        }
+        else if (playerController != null)
+        {
+            playerController.transform.SetPositionAndRotation(
+                CheckpointManager.Position, CheckpointManager.Rotation);
+        }
+
+        // Snap camera
+        if (thirdPersonCamera != null) thirdPersonCamera.SnapToTarget();
+
+        // Re-enable player — timer keeps running untouched
+        if (playerController != null) playerController.enabled = true;
+
+        // Fade back in
+        if (fadeCanvasGroup != null)
+            yield return StartCoroutine(Fade(1f, 0f, fadeDuration));
+
+        _isRespawning = false;
+    }
 
     private IEnumerator RespawnSequence()
     {
