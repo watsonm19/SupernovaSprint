@@ -60,12 +60,12 @@ public static class AstronautAnimatorBuilder
         // ── States ────────────────────────────────────────────────────────────
         var sm = controller.layers[0].stateMachine;
 
-        var idle      = AddState(sm, "Idle",       clips["Idle"]);
-        var walk      = AddState(sm, "Walk",       clips["Walk"]);
-        var run       = AddState(sm, "Run",        clips["Run"]);
-        var jumpStart = AddState(sm, "JumpStart",  clips["Jump_start"]);
-        var airFloat  = AddState(sm, "Float",      clips["Jump_loop"]);
-        var flip      = AddState(sm, "Flip",       clips["Flip"]);
+        var idle      = AddState(sm, "Idle",       clips["Idle"],       1f);
+        var walk      = AddState(sm, "Walk",       clips["Walk"],       1f);
+        var run       = AddState(sm, "Run",        clips["Run"],        2f);
+        var jumpStart = AddState(sm, "JumpStart",  clips["Jump_start"], 2.1f);
+        var airFloat  = AddState(sm, "Float",      clips["Jump_loop"],  1.25f);
+        var flip      = AddState(sm, "Flip",       clips["Flip"],       1f);
 
         sm.defaultState = idle;
 
@@ -140,10 +140,11 @@ public static class AstronautAnimatorBuilder
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    static AnimatorState AddState(AnimatorStateMachine sm, string name, AnimationClip clip)
+    static AnimatorState AddState(AnimatorStateMachine sm, string name, AnimationClip clip, float speed = 1f)
     {
         var state  = sm.AddState(name);
         state.motion = clip;
+        state.speed  = speed;
         return state;
     }
 
