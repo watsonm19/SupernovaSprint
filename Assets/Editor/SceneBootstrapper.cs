@@ -130,6 +130,9 @@ public static class SceneBootstrapper
             var tickGuids = AssetDatabase.FindAssets("clock_tick t:AudioClip", new[] { "Assets/Audio/SFX" });
             if (tickGuids.Length > 0)
                 hud.tickClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(tickGuids[0]));
+            var checkpointGuids = AssetDatabase.FindAssets("checkpoint_reached t:AudioClip", new[] { "Assets/Audio/SFX" });
+            if (checkpointGuids.Length > 0)
+                hud.checkpointClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(checkpointGuids[0]));
 
             // ── Fail Screen (kill plane) ──────────────────────────────────────
             var failGO = new GameObject("FailScreen");

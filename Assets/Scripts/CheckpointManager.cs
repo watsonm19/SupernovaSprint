@@ -17,6 +17,9 @@ public static class CheckpointManager
     public static Vector3    Position      { get; private set; }
     public static Quaternion Rotation      { get; private set; }
 
+    /// <summary>Fired every time a new checkpoint is activated.</summary>
+    public static event System.Action OnCheckpointReached;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Init()
     {
@@ -35,5 +38,6 @@ public static class CheckpointManager
         _hasCheckpoint = true;
         Position       = position;
         Rotation       = rotation;
+        OnCheckpointReached?.Invoke();
     }
 }

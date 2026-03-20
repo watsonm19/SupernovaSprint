@@ -19,8 +19,10 @@
 //    151–200 display → Cyan + faster/larger pulse  (rocket mode)
 // ═════════════════════════════════════════════════════════════════════════════
 
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SupernovaHUD : MonoBehaviour
 {
@@ -94,6 +96,16 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("Seconds remaining at which the tick sound begins.")]
     public float tickThreshold = 10f;
 
+    // ── Checkpoint notification ───────────────────────────────────────────────
+
+    [Header("Checkpoint")]
+    public AudioClip checkpointClip;
+    [Range(0f, 1f)] public float checkpointVolume = 1f;
+    [Tooltip("How long the 'Checkpoint Reached' text stays fully visible.")]
+    public float checkpointHoldTime = 1.5f;
+    [Tooltip("How long the text takes to fade out.")]
+    public float checkpointFadeTime = 0.5f;
+
     // ── Private state ─────────────────────────────────────────────────────────
 
     private float   _remaining;         // Seconds left on the countdown
@@ -102,7 +114,9 @@ public class SupernovaHUD : MonoBehaviour
     private bool    _expired;           // True once timer hit zero (prevent double-restart)
     private Vector3 _speedBaseScale;    // Original localScale of speedText transform
     private int     _lastTickSecond;    // Tracks which second we last ticked on
-    private AudioSource _audioSource;
+    private AudioSource     _audioSource;
+    private TextMeshProUGUI _checkpointLabel;
+    private Coroutine       _checkpointCoroutine;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -111,17 +125,73 @@ public class SupernovaHUD : MonoBehaviour
         if (speedText != null)
             _speedBaseScale = speedText.transform.localScale;
 
-        // Initialise remaining time from current difficulty
-        _remaining = GameDifficulty.TimeLimit;
-
+        _remaining      = GameDifficulty.TimeLimit;
         _lastTickSecond = -1;
 
-        _audioSource             = gameObject.AddComponent<AudioSource>();
-        _audioSource.playOnAwake = false;
+        _audioSource              = gameObject.AddComponent<AudioSource>();
+        _audioSource.playOnAwake  = false;
         _audioSource.spatialBlend = 0f;
 
-        // Show the full timer immediately so the canvas doesn't flash empty.
+        BuildCheckpointLabel();
         RefreshTimerDisplay();
+    }
+
+    private void OnEnable()  => CheckpointManager.OnCheckpointReached += ShowCheckpointNotification;
+    private void OnDisable() => CheckpointManager.OnCheckpointReached -= ShowCheckpointNotification;
+
+    private void BuildCheckpointLabel()
+    {
+        // Find or create a canvas to attach to
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        var go  = new GameObject("CheckpointLabel");
+        go.transform.SetParent(canvas.transform, false);
+
+        _checkpointLabel           = go.AddComponent<TextMeshProUGUI>();
+        _checkpointLabel.text      = "CHECKPOINT REACHED";
+        _checkpointLabel.fontSize  = 34f;
+        _checkpointLabel.fontStyle = TMPro.FontStyles.Bold;
+        _checkpointLabel.color     = new Color(1f, 1f, 0f, 0f); // Yellow, fully transparent
+        _checkpointLabel.alignment = TMPro.TextAlignmentOptions.Center;
+
+        var rt              = go.GetComponent<RectTransform>();
+        rt.anchorMin        = new Vector2(0.5f, 1f);
+        rt.anchorMax        = new Vector2(0.5f, 1f);
+        rt.pivot            = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -35f); // Top-centre, below the top edge
+        rt.sizeDelta        = new Vector2(700f, 60f);
+    }
+
+    private void ShowCheckpointNotification()
+    {
+        if (checkpointClip != null)
+            _audioSource.PlayOneShot(checkpointClip, checkpointVolume);
+
+        if (_checkpointLabel == null) return;
+        if (_checkpointCoroutine != null) StopCoroutine(_checkpointCoroutine);
+        _checkpointCoroutine = StartCoroutine(CheckpointLabelRoutine());
+    }
+
+    private IEnumerator CheckpointLabelRoutine()
+    {
+        // Show instantly
+        _checkpointLabel.color = new Color(1f, 1f, 0f, 1f);
+
+        yield return new WaitForSeconds(checkpointHoldTime);
+
+        // Fade out
+        float elapsed = 0f;
+        while (elapsed < checkpointFadeTime)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / checkpointFadeTime);
+            _checkpointLabel.color = new Color(1f, 1f, 0f, alpha);
+            yield return null;
+        }
+
+        _checkpointLabel.color = new Color(1f, 1f, 0f, 0f);
+        _checkpointCoroutine   = null;
     }
 
     private void Update()
