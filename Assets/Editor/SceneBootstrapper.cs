@@ -154,8 +154,31 @@ public static class SceneBootstrapper
             if (explosionGuids.Length > 0)
                 timeFailScreen.explosionClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(explosionGuids[0]));
 
+            // ── Checkpoint fade overlay ───────────────────────────────────────
+            var fadeCanvasGO        = new GameObject("CheckpointFadeCanvas");
+            fadeCanvasGO.transform.SetParent(root.transform, false);
+            var fadeCanvas          = fadeCanvasGO.AddComponent<Canvas>();
+            fadeCanvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            fadeCanvas.sortingOrder = 99;
+            var fadeScaler                 = fadeCanvasGO.AddComponent<UnityEngine.UI.CanvasScaler>();
+            fadeScaler.uiScaleMode         = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            fadeScaler.referenceResolution = new Vector2(1920f, 1080f);
+            fadeCanvasGO.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
+            var fadeImgGO    = new GameObject("FadeImage");
+            fadeImgGO.transform.SetParent(fadeCanvasGO.transform, false);
+            var fadeImg      = fadeImgGO.AddComponent<UnityEngine.UI.Image>();
+            fadeImg.color    = new Color(0f, 0f, 0f, 1f);
+            var fadeRT       = fadeImgGO.GetComponent<RectTransform>();
+            fadeRT.anchorMin = Vector2.zero;
+            fadeRT.anchorMax = Vector2.one;
+            fadeRT.sizeDelta = Vector2.zero;
+            var fadeCG             = fadeImgGO.AddComponent<CanvasGroup>();
+            fadeCG.alpha           = 0f;
+            fadeCG.blocksRaycasts  = false;
+
             // ── Kill plane / respawn manager ──────────────────────────────────
-            BuildKillPlane(root.transform, player, camGO, hud, failScreen);
+            BuildKillPlane(root.transform, player, camGO, hud, failScreen, fadeCG);
 
             // ── Wire controller references ────────────────────────────────────
             var ctrl = player.GetComponent<SupernovaSprintController>();
@@ -372,7 +395,7 @@ public static class SceneBootstrapper
     //  that enters it triggers the SupernovaRespawnManager respawn sequence.
 
     static void BuildKillPlane(Transform parent, GameObject player, GameObject camGO,
-                                SupernovaHUD hud, FailScreen failScreen)
+                                SupernovaHUD hud, FailScreen failScreen, CanvasGroup fadeCanvasGroup)
     {
         var kp = new GameObject("KillPlane");
         kp.transform.SetParent(parent, false);
@@ -393,6 +416,8 @@ public static class SceneBootstrapper
         var respawnGuids = AssetDatabase.FindAssets("checkpoint_respawn t:AudioClip", new[] { "Assets/Audio/SFX" });
         if (respawnGuids.Length > 0)
             rm.checkpointRespawnClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(respawnGuids[0]));
+
+        rm.fadeCanvasGroup = fadeCanvasGroup;
 
         EditorUtility.SetDirty(kp);
     }

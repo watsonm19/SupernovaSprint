@@ -125,7 +125,7 @@ MonoBehaviour:
   homingBounceForce: 12
   homingFreezeFrameDuration: 0.05
   homingDashDuration: 0.35
-  gravityForce: 25
+  gravityForce: 21
   groundStickyForce: 15
   groundCheckRadius: 0.4
   groundCheckDistance: 1.1
