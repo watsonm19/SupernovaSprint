@@ -562,6 +562,9 @@ public class SupernovaSprintController : MonoBehaviour
 
     private void GroundedMovement()
     {
+        // Discard any boost input that was buffered while grounded
+        forceBoostPressed = false;
+
         // ── 1. Camera-Relative Input Direction ────────────────────────────────
         //
         //  We project the camera's world-space axes onto the surface plane.

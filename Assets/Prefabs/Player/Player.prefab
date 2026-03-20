@@ -257,12 +257,15 @@ MonoBehaviour:
   ringMaterial: {fileID: 2100000, guid: 65b511f422652e84181275c943579573, type: 2}
   ringColor: {r: 0, g: 1, b: 1, a: 1}
   lineWidth: 0.05
-  segments: 48
-  startRadius: 0.2
-  endRadiusSmall: 0.7
-  endRadiusLarge: 1.2
-  verticalOffset: 0.7
-  duration: 0.35
+  segments: 6
+  startRadiusTop: 0.5
+  endRadiusTop: 1
+  startRadiusMid: 0.35
+  endRadiusMid: 0.75
+  startRadiusBottom: 0.2
+  endRadiusBottom: 0.5
+  verticalOffset: 0.5
+  duration: 0.75
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0

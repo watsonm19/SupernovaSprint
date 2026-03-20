@@ -25,6 +25,7 @@
 
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Collider))]
 public class SupernovaRespawnManager : MonoBehaviour
@@ -109,6 +110,14 @@ public class SupernovaRespawnManager : MonoBehaviour
         if (_isRespawning || playerController == null) return;
         if (playerController.transform.position.y < deathYThreshold)
             TriggerDeath();
+
+        // Select (controller) or Backspace (keyboard) → return to last checkpoint
+        bool selectPressed =
+            (Gamepad.current   != null && Gamepad.current.selectButton.wasPressedThisFrame) ||
+            (Keyboard.current  != null && Keyboard.current.backspaceKey.wasPressedThisFrame);
+
+        if (selectPressed && CheckpointManager.HasCheckpoint)
+            ReturnToCheckpoint();
     }
 
     // ── Kill-plane trigger ────────────────────────────────────────────────────
@@ -158,6 +167,17 @@ public class SupernovaRespawnManager : MonoBehaviour
     {
         if (_isRespawning) return;
         StartCoroutine(RespawnSequence());
+    }
+
+    /// <summary>
+    /// Voluntarily returns the player to their last checkpoint.
+    /// Only works if a checkpoint has been activated. Timer keeps running.
+    /// </summary>
+    public void ReturnToCheckpoint()
+    {
+        if (_isRespawning || !CheckpointManager.HasCheckpoint) return;
+        _isRespawning = true;
+        StartCoroutine(CheckpointRespawnSequence());
     }
 
     // ── Sequences ─────────────────────────────────────────────────────────────

@@ -149,7 +149,7 @@ public class SupernovaHUD : MonoBehaviour
         go.transform.SetParent(canvas.transform, false);
 
         _checkpointLabel           = go.AddComponent<TextMeshProUGUI>();
-        _checkpointLabel.text      = "CHECKPOINT REACHED";
+        _checkpointLabel.text      = "CHECKPOINT SYNCED";
         _checkpointLabel.fontSize  = 34f;
         _checkpointLabel.fontStyle = TMPro.FontStyles.Bold;
         _checkpointLabel.color     = new Color(1f, 1f, 0f, 0f); // Yellow, fully transparent

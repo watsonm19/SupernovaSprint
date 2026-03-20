@@ -27,24 +27,33 @@ public class ForceBoostVFX : MonoBehaviour
     [Header("Appearance")]
     public Color ringColor  = new Color(0f, 1f, 1f, 1f); // Cyan, matches thruster glow
     public float lineWidth  = 0.05f;
-    public int   segments   = 48;
+    public int   segments   = 6;
 
     [Header("Layout")]
-    [Tooltip("Radius all rings start from.")]
-    public float startRadius = 0.4f;
+    [Tooltip("Start radius of the top ring.")]
+    public float startRadiusTop = 0.5f;
 
-    [Tooltip("End radius of the top and bottom rings.")]
-    public float endRadiusSmall = 1.1f;
+    [Tooltip("End radius of the top ring.")]
+    public float endRadiusTop = 1f;
 
-    [Tooltip("End radius of the wider middle ring.")]
-    public float endRadiusLarge = 1.7f;
+    [Tooltip("Start radius of the middle ring.")]
+    public float startRadiusMid = 0.35f;
+
+    [Tooltip("End radius of the middle ring.")]
+    public float endRadiusMid = 0.75f;
+
+    [Tooltip("Start radius of the bottom ring.")]
+    public float startRadiusBottom = 0.2f;
+
+    [Tooltip("End radius of the bottom ring.")]
+    public float endRadiusBottom = 0.5f;
 
     [Tooltip("How far above and below the player center the top/bottom rings spawn.")]
-    public float verticalOffset = 0.7f;
+    public float verticalOffset = 0.5f;
 
     [Header("Animation")]
     [Tooltip("How long the rings take to fully expand and fade out.")]
-    public float duration = 0.35f;
+    public float duration = 0.75f;
 
     // ── Private ───────────────────────────────────────────────────────────────
 
@@ -100,12 +109,9 @@ public class ForceBoostVFX : MonoBehaviour
             float t     = elapsed / duration;
             float alpha = Mathf.Pow(1f - t, 1.5f); // snappy fade
 
-            float rSmall = Mathf.Lerp(startRadius, endRadiusSmall, t);
-            float rLarge = Mathf.Lerp(startRadius, endRadiusLarge, t);
-
-            UpdateRing(top,    rSmall, alpha);
-            UpdateRing(mid,    rLarge, alpha);
-            UpdateRing(bottom, rSmall, alpha);
+            UpdateRing(top,    Mathf.Lerp(startRadiusTop,    endRadiusTop,    t), alpha);
+            UpdateRing(mid,    Mathf.Lerp(startRadiusMid,    endRadiusMid,    t), alpha);
+            UpdateRing(bottom, Mathf.Lerp(startRadiusBottom, endRadiusBottom, t), alpha);
 
             elapsed += Time.deltaTime;
             yield return null;
