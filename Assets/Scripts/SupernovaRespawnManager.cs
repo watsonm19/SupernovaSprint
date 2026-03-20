@@ -67,6 +67,13 @@ public class SupernovaRespawnManager : MonoBehaviour
     [Tooltip("The FailScreen component in the scene. Shown instead of respawning.")]
     public FailScreen failScreen;
 
+    // ── Checkpoint respawn sound ──────────────────────────────────────────────
+
+    [Header("Checkpoint Respawn Sound")]
+    [Tooltip("Played whenever the player is returned to a checkpoint (fall or manual).")]
+    public AudioClip checkpointRespawnClip;
+    [Range(0f, 1f)] public float checkpointRespawnVolume = 1f;
+
     // ── Fall death ────────────────────────────────────────────────────────────
 
     [Header("Fall Death")]
@@ -80,6 +87,7 @@ public class SupernovaRespawnManager : MonoBehaviour
     private Quaternion _spawnRotation;
     private Rigidbody  _rb;
     private bool       _isRespawning;
+    private AudioSource _audio;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -87,6 +95,10 @@ public class SupernovaRespawnManager : MonoBehaviour
     {
         // Guarantee the collider attached to this object is a trigger.
         GetComponent<Collider>().isTrigger = true;
+
+        _audio                     = gameObject.AddComponent<AudioSource>();
+        _audio.playOnAwake         = false;
+        _audio.spatialBlend        = 0f;
     }
 
     private void Start()
@@ -184,6 +196,9 @@ public class SupernovaRespawnManager : MonoBehaviour
 
     private IEnumerator CheckpointRespawnSequence()
     {
+        if (checkpointRespawnClip != null)
+            _audio.PlayOneShot(checkpointRespawnClip, checkpointRespawnVolume);
+
         // Fade to black
         if (fadeCanvasGroup != null)
             yield return StartCoroutine(Fade(0f, 1f, fadeDuration));

@@ -390,6 +390,10 @@ public static class SceneBootstrapper
         rm.hud               = hud;
         rm.failScreen        = failScreen;
 
+        var respawnGuids = AssetDatabase.FindAssets("checkpoint_respawn t:AudioClip", new[] { "Assets/Audio/SFX" });
+        if (respawnGuids.Length > 0)
+            rm.checkpointRespawnClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(respawnGuids[0]));
+
         EditorUtility.SetDirty(kp);
     }
 
