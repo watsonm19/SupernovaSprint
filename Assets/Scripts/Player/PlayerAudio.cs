@@ -21,6 +21,7 @@ public class PlayerAudio : MonoBehaviour
     public AudioClip rocketToggleOn;
     public AudioClip rocketToggleOff;
     public AudioClip thruster;
+    public AudioClip forceBoost;
 
     [Header("Footstep")]
     [Tooltip("Step interval at low speed (seconds).")]
@@ -34,6 +35,7 @@ public class PlayerAudio : MonoBehaviour
     public float landVolume         = 1f;
     public float homingAttackVolume = 1f;
     public float homingHitVolume    = 1f;
+    public float forceBoostVolume   = 1f;
     public float thrusterVolume     = 0.5f;
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -70,6 +72,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnLand         += PlayLand;
         controller.OnHomingAttack += PlayHomingAttack;
         controller.OnHomingHit    += PlayHomingHit;
+        controller.OnForceBoost   += PlayForceBoost;
         controller.OnRocketToggle += PlayRocketToggle;
     }
 
@@ -80,6 +83,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnLand         -= PlayLand;
         controller.OnHomingAttack -= PlayHomingAttack;
         controller.OnHomingHit    -= PlayHomingHit;
+        controller.OnForceBoost   -= PlayForceBoost;
         controller.OnRocketToggle -= PlayRocketToggle;
     }
 
@@ -129,6 +133,7 @@ public class PlayerAudio : MonoBehaviour
     private void PlayLand()                  => Play(land, landVolume);
     private void PlayHomingAttack()          => Play(homingAttack, homingAttackVolume);
     private void PlayHomingHit()             => Play(homingHit, homingHitVolume);
+    private void PlayForceBoost()            => Play(forceBoost, forceBoostVolume);
     private void PlayRocketToggle(bool on)   => Play(on ? rocketToggleOn : rocketToggleOff);
 
     // ── Helper ────────────────────────────────────────────────────────────────

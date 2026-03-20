@@ -3,9 +3,10 @@
 //  Drives the Astronaut Animator from SupernovaSprintController's runtime state.
 //
 //  PARAMETERS (set by AstronautAnimatorBuilder):
-//    Speed      (float) — current movement speed
-//    IsGrounded (bool)  — true when on a surface
-//    IsHoming   (bool)  — true during a homing attack
+//    Speed       (float)   — current movement speed
+//    IsGrounded  (bool)    — true when on a surface
+//    IsHoming    (bool)    — true during a homing attack
+//    ForceBoost  (trigger) — fires once when Force Boost is used
 //
 //  SETUP:
 //    1. Run Supernova Sprint → Build Astronaut Animator to generate the controller.
@@ -30,9 +31,22 @@ public class PlayerAnimator : MonoBehaviour
     public float runThreshold = 25f;
 
     // Cached parameter hashes — faster than string lookup every frame.
-    private static readonly int SpeedHash      = Animator.StringToHash("Speed");
-    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
-    private static readonly int IsHomingHash   = Animator.StringToHash("IsHoming");
+    private static readonly int SpeedHash       = Animator.StringToHash("Speed");
+    private static readonly int IsGroundedHash  = Animator.StringToHash("IsGrounded");
+    private static readonly int IsHomingHash    = Animator.StringToHash("IsHoming");
+    private static readonly int ForceBoostHash  = Animator.StringToHash("ForceBoost");
+
+    private void OnEnable()
+    {
+        if (controller != null) controller.OnForceBoost += TriggerForceBoost;
+    }
+
+    private void OnDisable()
+    {
+        if (controller != null) controller.OnForceBoost -= TriggerForceBoost;
+    }
+
+    private void TriggerForceBoost() => animator.SetTrigger(ForceBoostHash);
 
     private void Update()
     {

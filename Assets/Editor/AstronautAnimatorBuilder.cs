@@ -34,7 +34,7 @@ public static class AstronautAnimatorBuilder
             .Where(c => !c.name.StartsWith("__preview__"))
             .ToDictionary(c => c.name);
 
-        string[] required = { "Idle", "Walk", "Run", "Jump_start", "Jump_loop", "Flip" };
+        string[] required = { "Idle", "Walk", "Run", "Jump_start", "Jump_loop", "Float", "Flip" };
         foreach (string name in required)
         {
             if (!clips.ContainsKey(name))
@@ -53,19 +53,21 @@ public static class AstronautAnimatorBuilder
         var controller = AnimatorController.CreateAnimatorControllerAtPath(OUTPUT_PATH);
 
         // ── Parameters ───────────────────────────────────────────────────────
-        controller.AddParameter("Speed",      AnimatorControllerParameterType.Float);
-        controller.AddParameter("IsGrounded", AnimatorControllerParameterType.Bool);
-        controller.AddParameter("IsHoming",   AnimatorControllerParameterType.Bool);
+        controller.AddParameter("Speed",        AnimatorControllerParameterType.Float);
+        controller.AddParameter("IsGrounded",  AnimatorControllerParameterType.Bool);
+        controller.AddParameter("IsHoming",    AnimatorControllerParameterType.Bool);
+        controller.AddParameter("ForceBoost",  AnimatorControllerParameterType.Trigger);
 
         // ── States ────────────────────────────────────────────────────────────
         var sm = controller.layers[0].stateMachine;
 
-        var idle      = AddState(sm, "Idle",       clips["Idle"],       1f);
-        var walk      = AddState(sm, "Walk",       clips["Walk"],       1f);
-        var run       = AddState(sm, "Run",        clips["Run"],        2f);
-        var jumpStart = AddState(sm, "JumpStart",  clips["Jump_start"], 2.1f);
-        var airFloat  = AddState(sm, "Float",      clips["Jump_loop"],  1.25f);
-        var flip      = AddState(sm, "Flip",       clips["Flip"],       1f);
+        var idle       = AddState(sm, "Idle",        clips["Idle"],       1f);
+        var walk       = AddState(sm, "Walk",        clips["Walk"],       1f);
+        var run        = AddState(sm, "Run",         clips["Run"],        2f);
+        var jumpStart  = AddState(sm, "JumpStart",   clips["Jump_start"], 2.1f);
+        var airFloat   = AddState(sm, "Float",       clips["Jump_loop"],  1.25f);
+        var forceBoost = AddState(sm, "ForceBoost",  clips["Float"],      9f);
+        var flip       = AddState(sm, "Flip",        clips["Flip"],       1f);
 
         sm.defaultState = idle;
 
@@ -105,6 +107,32 @@ public static class AstronautAnimatorBuilder
         var floatToRun = Transition(airFloat, run, 0.15f, false);
         floatToRun.AddCondition(AnimatorConditionMode.If,      0f,            "IsGrounded");
         floatToRun.AddCondition(AnimatorConditionMode.Greater, RUN_THRESHOLD, "Speed");
+
+        //  Any State → ForceBoost (trigger-based, one-shot)
+        var anyToForceBoost = sm.AddAnyStateTransition(forceBoost);
+        anyToForceBoost.hasExitTime        = false;
+        anyToForceBoost.duration           = 0.05f;
+        anyToForceBoost.canTransitionToSelf = false;
+        anyToForceBoost.AddCondition(AnimatorConditionMode.If, 0f, "ForceBoost");
+
+        //  ForceBoost → Float (returns to air loop at 80% of clip while still airborne)
+        var forceBoostToFloat = Transition(forceBoost, airFloat, 0.15f, true);
+        forceBoostToFloat.exitTime = 0.8f;
+        forceBoostToFloat.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsGrounded");
+
+        //  ForceBoost → grounded locomotion (if player lands before clip finishes)
+        var forceBoostToIdle = Transition(forceBoost, idle, 0.15f, false);
+        forceBoostToIdle.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        forceBoostToIdle.AddCondition(AnimatorConditionMode.Less,    WALK_THRESHOLD, "Speed");
+
+        var forceBoostToWalk = Transition(forceBoost, walk, 0.15f, false);
+        forceBoostToWalk.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        forceBoostToWalk.AddCondition(AnimatorConditionMode.Greater, WALK_THRESHOLD, "Speed");
+        forceBoostToWalk.AddCondition(AnimatorConditionMode.Less,    RUN_THRESHOLD,  "Speed");
+
+        var forceBoostToRun = Transition(forceBoost, run, 0.15f, false);
+        forceBoostToRun.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        forceBoostToRun.AddCondition(AnimatorConditionMode.Greater, RUN_THRESHOLD,  "Speed");
 
         //  Any State → Flip (homing attack — highest priority)
         var anyToFlip = sm.AddAnyStateTransition(flip);

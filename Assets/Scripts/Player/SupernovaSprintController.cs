@@ -110,6 +110,13 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Horizontal speed cap while airborne (separate from topSpeed).")]
     public float maxAirStrafeSpeed = 20f;
 
+    [Header("── Force Boost ──────────────────────────────────────────────")]
+    [Tooltip("Horizontal dash speed of the Force Boost (similar to homingSpeed).")]
+    public float forceBoostSpeed = 20f;
+
+    [Tooltip("Upward velocity added alongside the horizontal dash for a slight lift.")]
+    public float forceBoostUpForce = 6f;
+
     [Header("── Visual Lean ───────────────────────────────────────────────")]
     [Tooltip("Child transform of the visible mesh. Only this object is tilted, NOT the physics body.")]
     public Transform visualModel;
@@ -175,7 +182,12 @@ public class SupernovaSprintController : MonoBehaviour
     private float   jumpHoldTimer;
 
     // Homing
-    private bool    homingAvailable; // Refreshed each time the player lands
+    private bool      homingAvailable; // Refreshed each time the player lands
+    private Coroutine _activeHomingCoroutine;
+
+    // Force Boost
+    private bool forceBoostPressed;
+    private bool forceBoostAvailable;
 
     // State
     private enum PlayerState { Grounded, Airborne, HomingAttack }
@@ -189,6 +201,7 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnLand;
     [System.NonSerialized] public System.Action        OnHomingAttack;
     [System.NonSerialized] public System.Action        OnHomingHit;
+    [System.NonSerialized] public System.Action        OnForceBoost;
     [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
 
     // Set true by LoopBoostTrigger to allow temporary overspeed through a loop.
@@ -222,7 +235,8 @@ public class SupernovaSprintController : MonoBehaviour
     private void Awake()
     {
         rb             = GetComponent<Rigidbody>();
-        rb.useGravity  = false;  // We apply gravity ourselves so we can redirect it per-surface
+        rb.useGravity       = false;  // We apply gravity ourselves so we can redirect it per-surface
+        forceBoostAvailable = true;
         rb.linearDamping        = 0f;     // SA2: no drag — momentum is sacred
         rb.angularDamping = 0f;
         rb.constraints = RigidbodyConstraints.FreezeRotation; // We rotate transform manually
@@ -250,6 +264,7 @@ public class SupernovaSprintController : MonoBehaviour
         if (state == PlayerState.HomingAttack)
         {
             isHomingPublic = true;
+            HandleForceBoost(); // Allow cancelling mid-attack
             return;
         }
 
@@ -338,6 +353,12 @@ public class SupernovaSprintController : MonoBehaviour
             if (Keyboard.current.spaceKey.wasPressedThisFrame) newJumpPressed = true;
             if (Keyboard.current.spaceKey.isPressed)           newJumpHeld    = true;
         }
+
+        // ── Force Boost (X / West) ────────────────────────────────────────────
+        if (Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame)
+            forceBoostPressed = true;
+        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+            forceBoostPressed = true;
 
         // ── Polarity toggle ───────────────────────────────────────────────────
         //  LB or RB (gamepad) / Left Shift or Right Shift (keyboard) — either toggles mode.
@@ -456,7 +477,8 @@ public class SupernovaSprintController : MonoBehaviour
         if (isGrounded)
         {
             state           = PlayerState.Grounded;
-            homingAvailable = true;   // Homing refreshes every time we touch ground (SA2 behaviour)
+            homingAvailable    = true; // Homing refreshes every time we touch ground (SA2 behaviour)
+            forceBoostAvailable = true;
             isJumping       = false;
         }
         else if (state != PlayerState.HomingAttack)
@@ -682,6 +704,7 @@ public class SupernovaSprintController : MonoBehaviour
     private void AirborneMovement()
     {
         HandleAirJump();
+        HandleForceBoost();
 
         // Homing attack: jump pressed while airborne + homing is available
         if (jumpBufferTimer > 0f && homingAvailable)
@@ -703,6 +726,46 @@ public class SupernovaSprintController : MonoBehaviour
         Vector3 horizontalVel = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
         if (horizontalVel.magnitude < maxAirStrafeSpeed)
             rb.AddForce(inputDir * acceleration * airControlFactor, ForceMode.Acceleration);
+    }
+
+    private void HandleForceBoost()
+    {
+        if (!forceBoostPressed) return;
+        forceBoostPressed = false;
+        if (!forceBoostAvailable) return;
+        forceBoostAvailable = false;
+
+        // Cancel any active homing attack
+        if (state == PlayerState.HomingAttack && _activeHomingCoroutine != null)
+        {
+            StopCoroutine(_activeHomingCoroutine);
+            _activeHomingCoroutine = null;
+            state = PlayerState.Airborne;
+        }
+
+        // Camera-relative direction from stick — same logic as homing attack aim.
+        // Fall back to current velocity direction, then camera forward if near-still.
+        Vector3 boostDir;
+        if (cameraTransform != null && moveInput.sqrMagnitude > 0.1f)
+        {
+            Vector3 camFwd   = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+            Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right,   Vector3.up).normalized;
+            boostDir = (camFwd * moveInput.y + camRight * moveInput.x).normalized;
+        }
+        else
+        {
+            Vector3 horizVel = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
+            boostDir = horizVel.sqrMagnitude > 1f
+                ? horizVel.normalized
+                : (cameraTransform != null
+                    ? Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized
+                    : transform.forward);
+        }
+
+        // Dash in boost direction + small vertical lift, same pattern as homing attack
+        rb.linearVelocity = boostDir * forceBoostSpeed + Vector3.up * forceBoostUpForce;
+
+        OnForceBoost?.Invoke();
     }
 
     #endregion
@@ -787,11 +850,11 @@ public class SupernovaSprintController : MonoBehaviour
 
         if (best == null)
         {
-            StartCoroutine(TargetlessHomingRoutine(aimDir));
+            _activeHomingCoroutine = StartCoroutine(TargetlessHomingRoutine(aimDir));
             return;
         }
 
-        StartCoroutine(HomingAttackRoutine(best));
+        _activeHomingCoroutine = StartCoroutine(HomingAttackRoutine(best));
     }
 
     private IEnumerator HomingAttackRoutine(Transform target)

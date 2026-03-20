@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 8049350017995390649}
   - component: {fileID: 3203913522799093220}
   - component: {fileID: 6223953827598293972}
+  - component: {fileID: 8934439916513361943}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -137,6 +138,8 @@ MonoBehaviour:
   rollingFriction: 0.5
   airControlFactor: 0.25
   maxAirStrafeSpeed: 20
+  forceBoostSpeed: 25
+  forceBoostUpForce: 8
   visualModel: {fileID: 971701413174335510}
   maxLeanAngle: 25
   leanSpeed: 8
@@ -228,6 +231,7 @@ MonoBehaviour:
   rocketToggleOn: {fileID: 8300000, guid: 01ffb57cb1c4b5d428a139418ca4fed6, type: 3}
   rocketToggleOff: {fileID: 8300000, guid: 9f402db96a559124e829407d11d88da2, type: 3}
   thruster: {fileID: 8300000, guid: 9b472274e37228c4295c108120a364fb, type: 3}
+  forceBoost: {fileID: 8300000, guid: c03c24e016a7a16498719415f824a424, type: 3}
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
   footstepVolume: 1.5
@@ -235,7 +239,30 @@ MonoBehaviour:
   landVolume: 1.5
   homingAttackVolume: 1.8
   homingHitVolume: 2
+  forceBoostVolume: 1
   thrusterVolume: 1
+--- !u!114 &8934439916513361943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3881487371748999295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b7e8d1a28976cf4e8da93996800ce75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForceBoostVFX
+  controller: {fileID: 7168267401702996782}
+  ringMaterial: {fileID: 2100000, guid: 65b511f422652e84181275c943579573, type: 2}
+  ringColor: {r: 0, g: 1, b: 1, a: 1}
+  lineWidth: 0.05
+  segments: 48
+  startRadius: 0.4
+  endRadiusSmall: 1.1
+  endRadiusLarge: 1.7
+  verticalOffset: 0.7
+  duration: 0.35
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0
