@@ -365,6 +365,7 @@ public class PauseManager : MonoBehaviour
             ("Camera",                "Right Stick  /  Mouse"),
             ("Jump",                  "A  /  Space"),
             ("Homing Attack",         "A  /  Space  (while airborne)"),
+            ("Force Boost",           "X  /  E  (while airborne)"),
             ("Toggle Rocket Mode",    "LB or RB  /  Shift"),
             ("Pause",                 "Start  /  Escape"),
         };
