@@ -258,9 +258,9 @@ MonoBehaviour:
   ringColor: {r: 0, g: 1, b: 1, a: 1}
   lineWidth: 0.05
   segments: 48
-  startRadius: 0.4
-  endRadiusSmall: 1.1
-  endRadiusLarge: 1.7
+  startRadius: 0.2
+  endRadiusSmall: 0.7
+  endRadiusLarge: 1.2
   verticalOffset: 0.7
   duration: 0.35
 --- !u!1 &4161311611875934899
