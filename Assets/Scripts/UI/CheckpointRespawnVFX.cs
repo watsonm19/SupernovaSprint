@@ -13,21 +13,21 @@ public class CheckpointRespawnVFX : MonoBehaviour
 {
     [Header("Particles")]
     [Tooltip("Number of particles spawned per Play() call.")]
-    public int count = 120;
+    public int count = 200;
 
     [Tooltip("Min/max particle size in canvas units.")]
-    public float minSize = 3f;
-    public float maxSize = 9f;
+    public float minSize = 6f;
+    public float maxSize = 14f;
 
     [Tooltip("Min/max upward drift speed in canvas units per second.")]
-    public float minSpeed = 90f;
-    public float maxSpeed = 220f;
+    public float minSpeed = 150f;
+    public float maxSpeed = 320f;
 
     [Tooltip("How long each particle lives (seconds).")]
-    public float lifetime = 1f;
+    public float lifetime = 0.9f;
 
     [Tooltip("Particles are spawned over this fraction of their lifetime.")]
-    public float spawnWindow = 0.25f;
+    public float spawnWindow = 0.2f;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
