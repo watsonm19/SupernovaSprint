@@ -50,7 +50,7 @@ public class SupernovaRespawnManager : MonoBehaviour
     public CanvasGroup fadeCanvasGroup;
 
     [Tooltip("Duration of each fade-out / fade-in pass (seconds).")]
-    public float fadeDuration = 0.3f;
+    public float fadeDuration = 0.4f;
 
     // ── Camera Shake ──────────────────────────────────────────────────────────
 
@@ -73,6 +73,11 @@ public class SupernovaRespawnManager : MonoBehaviour
     [Tooltip("Played whenever the player is returned to a checkpoint (fall or manual).")]
     public AudioClip checkpointRespawnClip;
     [Range(0f, 1f)] public float checkpointRespawnVolume = 1f;
+
+    // ── Checkpoint respawn VFX ────────────────────────────────────────────────
+
+    [Header("Checkpoint Respawn VFX")]
+    public CheckpointRespawnVFX respawnVFX;
 
     // ── Fall death ────────────────────────────────────────────────────────────
 
@@ -233,7 +238,8 @@ public class SupernovaRespawnManager : MonoBehaviour
         // Re-enable player — timer keeps running untouched
         if (playerController != null) playerController.enabled = true;
 
-        // Fade back in
+        // Particles + fade back in
+        respawnVFX?.Play();
         if (fadeCanvasGroup != null)
             yield return StartCoroutine(Fade(1f, 0f, fadeDuration));
 

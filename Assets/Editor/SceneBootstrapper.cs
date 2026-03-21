@@ -176,9 +176,10 @@ public static class SceneBootstrapper
             var fadeCG             = fadeImgGO.AddComponent<CanvasGroup>();
             fadeCG.alpha           = 0f;
             fadeCG.blocksRaycasts  = false;
+            var respawnVFX         = fadeImgGO.AddComponent<CheckpointRespawnVFX>();
 
             // ── Kill plane / respawn manager ──────────────────────────────────
-            BuildKillPlane(root.transform, player, camGO, hud, failScreen, fadeCG);
+            BuildKillPlane(root.transform, player, camGO, hud, failScreen, fadeCG, respawnVFX);
 
             // ── Wire controller references ────────────────────────────────────
             var ctrl = player.GetComponent<SupernovaSprintController>();
@@ -395,7 +396,8 @@ public static class SceneBootstrapper
     //  that enters it triggers the SupernovaRespawnManager respawn sequence.
 
     static void BuildKillPlane(Transform parent, GameObject player, GameObject camGO,
-                                SupernovaHUD hud, FailScreen failScreen, CanvasGroup fadeCanvasGroup)
+                                SupernovaHUD hud, FailScreen failScreen, CanvasGroup fadeCanvasGroup,
+                                CheckpointRespawnVFX respawnVFX)
     {
         var kp = new GameObject("KillPlane");
         kp.transform.SetParent(parent, false);
@@ -418,6 +420,7 @@ public static class SceneBootstrapper
             rm.checkpointRespawnClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(respawnGuids[0]));
 
         rm.fadeCanvasGroup = fadeCanvasGroup;
+        rm.respawnVFX      = respawnVFX;
 
         EditorUtility.SetDirty(kp);
     }
