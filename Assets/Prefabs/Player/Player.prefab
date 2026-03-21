@@ -125,7 +125,7 @@ MonoBehaviour:
   homingBounceForce: 12
   homingFreezeFrameDuration: 0.05
   homingDashDuration: 0.35
-  gravityForce: 21
+  gravityForce: 25
   groundStickyForce: 15
   groundCheckRadius: 0.4
   groundCheckDistance: 1.1
@@ -138,7 +138,7 @@ MonoBehaviour:
   rollingFriction: 0.5
   airControlFactor: 0.25
   maxAirStrafeSpeed: 20
-  forceBoostSpeed: 25
+  forceBoostSpeed: 21
   forceBoostUpForce: 8
   visualModel: {fileID: 971701413174335510}
   maxLeanAngle: 25
