@@ -285,7 +285,7 @@ MonoBehaviour:
   controller: {fileID: 7168267401702996782}
   ringMaterial: {fileID: 0}
   ringColor: {r: 1, g: 1, b: 1, a: 1}
-  lineWidth: 1
+  lineWidth: 0.1
   segments: 6
   startRadius: 1.7
   endRadius: 0.7
