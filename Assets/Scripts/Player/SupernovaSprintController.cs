@@ -117,6 +117,10 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Upward velocity added alongside the horizontal dash for a slight lift.")]
     public float forceBoostUpForce = 6f;
 
+    [Header("── Kinetic Brake ─────────────────────────────────────────────")]
+    [Tooltip("Duration over which horizontal velocity is lerped to zero (seconds).")]
+    public float brakeDuration = 0.25f;
+
     [Header("── Visual Lean ───────────────────────────────────────────────")]
     [Tooltip("Child transform of the visible mesh. Only this object is tilted, NOT the physics body.")]
     public Transform visualModel;
@@ -189,6 +193,11 @@ public class SupernovaSprintController : MonoBehaviour
     private bool forceBoostPressed;
     private bool forceBoostAvailable;
 
+    // Kinetic Brake
+    private bool      _kineticBrakePressed;
+    private bool      _isBraking;
+    private Coroutine _kineticBrakeCoroutine;
+
     // State
     private enum PlayerState { Grounded, Airborne, HomingAttack }
     private PlayerState state = PlayerState.Airborne;
@@ -203,6 +212,7 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnHomingHit;
     [System.NonSerialized] public System.Action        OnForceBoost;
     [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
+    [System.NonSerialized] public System.Action        OnKineticBrake;
 
     // Set true by LoopBoostTrigger to allow temporary overspeed through a loop.
     // Self-clears in ClampSpeed() once gravity slows the player to topSpeed,
@@ -259,6 +269,9 @@ public class SupernovaSprintController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Runs first — may cancel homing and change state before the block below.
+        ExecuteKineticBrake();
+
         // The homing attack coroutine drives its own movement; pause everything else.
         // Set the public flag before returning so PlayerAnimator sees it this frame.
         if (state == PlayerState.HomingAttack)
@@ -274,10 +287,15 @@ public class SupernovaSprintController : MonoBehaviour
         AlignToSurface();
         ApplyGravity();
 
-        if (state == PlayerState.Grounded)
-            GroundedMovement();
-        else
-            AirborneMovement();
+        // Skip movement while braking — the KineticBrakeRoutine controls horizontal velocity.
+        // Gravity (ApplyGravity above) still applies so the player falls naturally.
+        if (!_isBraking)
+        {
+            if (state == PlayerState.Grounded)
+                GroundedMovement();
+            else
+                AirborneMovement();
+        }
 
         ClampSpeed();
     }
@@ -354,11 +372,17 @@ public class SupernovaSprintController : MonoBehaviour
             if (Keyboard.current.spaceKey.isPressed)           newJumpHeld    = true;
         }
 
-        // ── Force Boost (X / West) ────────────────────────────────────────────
+        // ── Force Boost (X / West / Q) ────────────────────────────────────────
         if (Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame)
             forceBoostPressed = true;
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
             forceBoostPressed = true;
+
+        // ── Kinetic Brake (B / East / E) ──────────────────────────────────────
+        if (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)
+            _kineticBrakePressed = true;
+        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+            _kineticBrakePressed = true;
 
         // ── Polarity toggle ───────────────────────────────────────────────────
         //  LB or RB (gamepad) / Left Shift or Right Shift (keyboard) — either toggles mode.
@@ -769,6 +793,64 @@ public class SupernovaSprintController : MonoBehaviour
         rb.linearVelocity = boostDir * forceBoostSpeed + Vector3.up * forceBoostUpForce;
 
         OnForceBoost?.Invoke();
+    }
+
+    #endregion
+    // ─────────────────────────────────────────────────────────────────────────
+    #region Kinetic Brake
+
+    private void ExecuteKineticBrake()
+    {
+        if (!_kineticBrakePressed) return;
+        _kineticBrakePressed = false;
+        if (_isBraking) return;
+
+        // Force out of Rocket Mode
+        if (isRocketMode)
+        {
+            isRocketMode = false;
+            ApplyPolarityMode();
+            OnRocketToggle?.Invoke(false);
+        }
+
+        // Cancel any active homing attack — allows a clean vertical drop
+        if (state == PlayerState.HomingAttack && _activeHomingCoroutine != null)
+        {
+            StopCoroutine(_activeHomingCoroutine);
+            _activeHomingCoroutine = null;
+            state = PlayerState.Airborne;
+        }
+
+        _kineticBrakeCoroutine = StartCoroutine(KineticBrakeRoutine());
+        OnKineticBrake?.Invoke();
+    }
+
+    private IEnumerator KineticBrakeRoutine()
+    {
+        _isBraking = true;
+        float elapsed = 0f;
+
+        while (elapsed < brakeDuration)
+        {
+            // Interrupt if jump is usable, or force boost is available and pressed
+            bool jumpInterrupts  = jumpBufferTimer > 0f && (isGrounded || homingAvailable);
+            bool boostInterrupts = forceBoostPressed && forceBoostAvailable;
+
+            if (jumpInterrupts || boostInterrupts)
+                break;
+
+            // Lerp horizontal (X/Z) toward zero — Y is untouched so gravity is unaffected
+            float   t     = elapsed / brakeDuration;
+            Vector3 vel   = rb.linearVelocity;
+            Vector3 horiz = Vector3.Lerp(new Vector3(vel.x, 0f, vel.z), Vector3.zero, t);
+            rb.linearVelocity = new Vector3(horiz.x, vel.y, horiz.z);
+
+            elapsed += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
+        }
+
+        _isBraking             = false;
+        _kineticBrakeCoroutine = null;
     }
 
     #endregion

@@ -357,7 +357,7 @@ public class PauseManager : MonoBehaviour
         panel.transform.SetParent(parent, false);
 
         MakeLabel(panel.transform, "Title", "CONTROLS",
-            72f, FontStyles.Bold, 270f, 900f, Color.white);
+            72f, FontStyles.Bold, 320f, 900f, Color.white);
 
         var controls = new (string action, string input)[]
         {
@@ -365,13 +365,14 @@ public class PauseManager : MonoBehaviour
             ("Camera",                "Right Stick  /  Mouse"),
             ("Jump",                  "A  /  Space"),
             ("Homing Attack",         "A  /  Space  (while airborne)"),
-            ("Force Boost",           "X  /  E  (while airborne)"),
+            ("Force Boost",           "X  /  Q  (while airborne)"),
+            ("Kinetic Brake",         "B  /  E"),
             ("Toggle Rocket Mode",    "LB or RB  /  Shift"),
             ("Return to Checkpoint",  "Select  /  Backspace"),
             ("Pause",                 "Start  /  Escape"),
         };
 
-        float startY  = 160f;
+        float startY  = 210f;
         float spacing = 72f;
 
         for (int i = 0; i < controls.Length; i++)
@@ -392,7 +393,7 @@ public class PauseManager : MonoBehaviour
         }
 
         MakeLabel(panel.transform, "BackHint", "B / ESC  Back",
-            22f, FontStyles.Normal, -420f, 600f,
+            22f, FontStyles.Normal, -460f, 600f,
             new Color(0.4f, 0.4f, 0.4f));
 
         return panel;

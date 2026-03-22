@@ -22,6 +22,7 @@ public class PlayerAudio : MonoBehaviour
     public AudioClip rocketToggleOff;
     public AudioClip thruster;
     public AudioClip forceBoost;
+    public AudioClip kineticBrake;
 
     [Header("Footstep")]
     [Tooltip("Step interval at low speed (seconds).")]
@@ -36,6 +37,7 @@ public class PlayerAudio : MonoBehaviour
     public float homingAttackVolume = 1f;
     public float homingHitVolume    = 1f;
     public float forceBoostVolume   = 1f;
+    public float kineticBrakeVolume = 1f;
     public float thrusterVolume     = 0.5f;
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -73,6 +75,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnHomingAttack += PlayHomingAttack;
         controller.OnHomingHit    += PlayHomingHit;
         controller.OnForceBoost   += PlayForceBoost;
+        controller.OnKineticBrake += PlayKineticBrake;
         controller.OnRocketToggle += PlayRocketToggle;
     }
 
@@ -84,6 +87,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnHomingAttack -= PlayHomingAttack;
         controller.OnHomingHit    -= PlayHomingHit;
         controller.OnForceBoost   -= PlayForceBoost;
+        controller.OnKineticBrake -= PlayKineticBrake;
         controller.OnRocketToggle -= PlayRocketToggle;
     }
 
@@ -134,6 +138,7 @@ public class PlayerAudio : MonoBehaviour
     private void PlayHomingAttack()          => Play(homingAttack, homingAttackVolume);
     private void PlayHomingHit()             => Play(homingHit, homingHitVolume);
     private void PlayForceBoost()            => Play(forceBoost, forceBoostVolume);
+    private void PlayKineticBrake()          => Play(kineticBrake, kineticBrakeVolume);
     private void PlayRocketToggle(bool on)   => Play(on ? rocketToggleOn : rocketToggleOff);
 
     // ── Helper ────────────────────────────────────────────────────────────────

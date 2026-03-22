@@ -122,6 +122,11 @@ public static class SceneBootstrapper
                     polarityVFX.glowMaterial = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(matGuids[0]));
             }
 
+            // Add KineticBrakeVFX if not already on the player
+            var kineticBrakeVFX = player.GetComponent<KineticBrakeVFX>()
+                                ?? player.AddComponent<KineticBrakeVFX>();
+            kineticBrakeVFX.controller = player.GetComponent<SupernovaSprintController>();
+
             // ── Camera ────────────────────────────────────────────────────────
             GameObject camGO = SetupCamera(root.transform, player.transform, groundLayer);
 

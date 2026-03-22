@@ -48,6 +48,7 @@ GameObject:
   - component: {fileID: 3203913522799093220}
   - component: {fileID: 6223953827598293972}
   - component: {fileID: 8934439916513361943}
+  - component: {fileID: 5931036730823098691}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -140,6 +141,7 @@ MonoBehaviour:
   maxAirStrafeSpeed: 20
   forceBoostSpeed: 21
   forceBoostUpForce: 8
+  brakeDuration: 0.25
   visualModel: {fileID: 971701413174335510}
   maxLeanAngle: 25
   leanSpeed: 8
@@ -232,6 +234,7 @@ MonoBehaviour:
   rocketToggleOff: {fileID: 8300000, guid: 9f402db96a559124e829407d11d88da2, type: 3}
   thruster: {fileID: 8300000, guid: 9b472274e37228c4295c108120a364fb, type: 3}
   forceBoost: {fileID: 8300000, guid: c03c24e016a7a16498719415f824a424, type: 3}
+  kineticBrake: {fileID: 8300000, guid: d66beef7f17767e479b42630879f3db2, type: 3}
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
   footstepVolume: 1.5
@@ -240,6 +243,7 @@ MonoBehaviour:
   homingAttackVolume: 1.8
   homingHitVolume: 2
   forceBoostVolume: 1
+  kineticBrakeVolume: 1
   thrusterVolume: 1
 --- !u!114 &8934439916513361943
 MonoBehaviour:
@@ -266,6 +270,29 @@ MonoBehaviour:
   endRadiusBottom: 0.5
   verticalOffset: 0.5
   duration: 0.75
+--- !u!114 &5931036730823098691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3881487371748999295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be901cf92f843284a85f9329f6933842, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KineticBrakeVFX
+  controller: {fileID: 7168267401702996782}
+  ringMaterial: {fileID: 0}
+  ringColor: {r: 1, g: 1, b: 1, a: 1}
+  lineWidth: 1
+  segments: 6
+  startRadius: 1.7
+  endRadius: 0.7
+  centerHeight: 1.2
+  verticalOffset: 0.25
+  duration: 0.48
+  dropDistance: 1.2
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0
