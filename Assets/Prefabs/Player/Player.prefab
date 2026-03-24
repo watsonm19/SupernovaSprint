@@ -142,6 +142,10 @@ MonoBehaviour:
   forceBoostSpeed: 21
   forceBoostUpForce: 8
   brakeDuration: 0.25
+  surgeSpeedBonus: 5
+  surgeTurnSpeedReduction: 6
+  surgeDuration: 5
+  surgeCooldown: 30
   visualModel: {fileID: 971701413174335510}
   maxLeanAngle: 25
   leanSpeed: 8
@@ -212,6 +216,7 @@ MonoBehaviour:
   glowRadius: 0.0002
   glowOffset: {x: 0, y: -0.00075, z: 0.000005}
   glowMaterial: {fileID: 2100000, guid: 65b511f422652e84181275c943579573, type: 2}
+  novaMaterial: {fileID: 2100000, guid: f1dcece0ce81c68419ba95fe2ca86061, type: 2}
 --- !u!114 &6223953827598293972
 MonoBehaviour:
   m_ObjectHideFlags: 0

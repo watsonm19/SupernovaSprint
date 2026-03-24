@@ -41,11 +41,16 @@ public class PolarityVFX : MonoBehaviour
     [Tooltip("Pre-saved material for the glow. Assign Mat_ThrusterGlow from Assets/Materials/.")]
     public Material glowMaterial;
 
+    [Tooltip("Material used for the glow during Nova Surge. Assign Mat_ThrusterNova from Assets/Materials/.")]
+    public Material novaMaterial;
+
     // ── Private state ──────────────────────────────────────────────────────────
 
     private bool       _wasRocketMode;
+    private bool       _wasNovaSurging;
     private bool       _thrusterWasPlaying;
     private GameObject _thrusterGlow;
+    private MeshRenderer _glowRenderer;
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
@@ -57,7 +62,8 @@ public class PolarityVFX : MonoBehaviour
                          : jetpackThruster != null ? jetpackThruster.transform
                          : transform;
 
-        _thrusterGlow = BuildGlow(parent);
+        _thrusterGlow  = BuildGlow(parent);
+        _glowRenderer  = _thrusterGlow.GetComponent<MeshRenderer>();
         _thrusterGlow.SetActive(false);
 
         if (jetpackThruster != null)
@@ -68,12 +74,20 @@ public class PolarityVFX : MonoBehaviour
     {
         if (controller == null) return;
 
-        // Glow — follows Rocket Mode only.
-        if (controller.isRocketMode != _wasRocketMode)
+        // Glow — active during Rocket Mode or Nova Surge, material swaps accordingly
+        bool surging    = controller.isNovaSurging;
+        bool rocketMode = controller.isRocketMode;
+
+        if (surging != _wasNovaSurging || rocketMode != _wasRocketMode)
         {
-            _wasRocketMode = controller.isRocketMode;
+            _wasNovaSurging = surging;
+            _wasRocketMode  = rocketMode;
+
             if (_thrusterGlow != null)
-                _thrusterGlow.SetActive(controller.isRocketMode);
+                _thrusterGlow.SetActive(rocketMode || surging);
+
+            if (_glowRenderer != null)
+                _glowRenderer.material = (surging && novaMaterial != null) ? novaMaterial : glowMaterial;
         }
 
         // Thruster — plays only when in Rocket Mode and actually moving.

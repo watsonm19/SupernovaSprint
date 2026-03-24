@@ -121,6 +121,19 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Duration over which horizontal velocity is lerped to zero (seconds).")]
     public float brakeDuration = 0.25f;
 
+    [Header("── Nova Surge ───────────────────────────────────────────────")]
+    [Tooltip("Flat top speed bonus added on top of Normal or Rocket Mode speed (m/s).")]
+    public float surgeSpeedBonus = 5f;
+
+    [Tooltip("How much turn speed is reduced while Nova Surge is active.")]
+    public float surgeTurnSpeedReduction = 6f;
+
+    [Tooltip("How long the speed boost lasts (seconds).")]
+    public float surgeDuration = 5f;
+
+    [Tooltip("Cooldown before Nova Surge can be used again (seconds).")]
+    public float surgeCooldown = 30f;
+
     [Header("── Visual Lean ───────────────────────────────────────────────")]
     [Tooltip("Child transform of the visible mesh. Only this object is tilted, NOT the physics body.")]
     public Transform visualModel;
@@ -198,6 +211,11 @@ public class SupernovaSprintController : MonoBehaviour
     private bool      _isBraking;
     private Coroutine _kineticBrakeCoroutine;
 
+    // Nova Surge
+    private bool      _novaSurgeInputPressed;
+    private bool      canSurge = true;
+    private Coroutine _novaSurgeCoroutine;
+
     // State
     private enum PlayerState { Grounded, Airborne, HomingAttack }
     private PlayerState state = PlayerState.Airborne;
@@ -213,6 +231,11 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnForceBoost;
     [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
     [System.NonSerialized] public System.Action        OnKineticBrake;
+    [System.NonSerialized] public System.Action        OnNovaSurge;
+
+    // Nova Surge readable state — use for screen shake, motion blur, HUD, etc.
+    [System.NonSerialized] public bool  isNovaSurging;
+    [System.NonSerialized] public float surgeCooldownRemaining;
 
     // Set true by LoopBoostTrigger to allow temporary overspeed through a loop.
     // Self-clears in ClampSpeed() once gravity slows the player to topSpeed,
@@ -271,6 +294,7 @@ public class SupernovaSprintController : MonoBehaviour
     {
         // Runs first — may cancel homing and change state before the block below.
         ExecuteKineticBrake();
+        ExecuteNovaSurge();
 
         // The homing attack coroutine drives its own movement; pause everything else.
         // Set the public flag before returning so PlayerAnimator sees it this frame.
@@ -383,6 +407,12 @@ public class SupernovaSprintController : MonoBehaviour
             _kineticBrakePressed = true;
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             _kineticBrakePressed = true;
+
+        // ── Nova Surge (Y / North / Tab) ──────────────────────────────────────
+        if (Gamepad.current  != null && Gamepad.current.buttonNorth.wasPressedThisFrame)
+            _novaSurgeInputPressed = true;
+        if (Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame)
+            _novaSurgeInputPressed = true;
 
         // ── Polarity toggle ───────────────────────────────────────────────────
         //  LB or RB (gamepad) / Left Shift or Right Shift (keyboard) — either toggles mode.
@@ -821,6 +851,10 @@ public class SupernovaSprintController : MonoBehaviour
             state = PlayerState.Airborne;
         }
 
+        // Cancel Nova Surge active window — cooldown still triggers inside the coroutine
+        if (isNovaSurging)
+            isNovaSurging = false;
+
         _kineticBrakeCoroutine = StartCoroutine(KineticBrakeRoutine());
         OnKineticBrake?.Invoke();
     }
@@ -851,6 +885,55 @@ public class SupernovaSprintController : MonoBehaviour
 
         _isBraking             = false;
         _kineticBrakeCoroutine = null;
+    }
+
+    #endregion
+    // ─────────────────────────────────────────────────────────────────────────
+    #region Nova Surge
+
+    private void ExecuteNovaSurge()
+    {
+        if (!_novaSurgeInputPressed) return;
+        _novaSurgeInputPressed = false;
+        if (!canSurge) return;
+
+        _novaSurgeCoroutine = StartCoroutine(NovaSurgeRoutine());
+    }
+
+    private IEnumerator NovaSurgeRoutine()
+    {
+        // ── Activate ──────────────────────────────────────────────────────────
+        canSurge      = false;
+        isNovaSurging = true;
+        topSpeed     += surgeSpeedBonus;
+        turnSpeed    -= surgeTurnSpeedReduction;
+        OnNovaSurge?.Invoke();
+
+        // ── Active window ─────────────────────────────────────────────────────
+        //  Ticks every frame. Exits early if Kinetic Brake sets isNovaSurging = false.
+        float elapsed = 0f;
+        while (elapsed < surgeDuration && isNovaSurging)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // ── Deactivate boost ──────────────────────────────────────────────────
+        isNovaSurging = false;
+        topSpeed     -= surgeSpeedBonus;
+        turnSpeed    += surgeTurnSpeedReduction;
+
+        // ── Cooldown ──────────────────────────────────────────────────────────
+        surgeCooldownRemaining = surgeCooldown;
+        while (surgeCooldownRemaining > 0f)
+        {
+            surgeCooldownRemaining -= Time.deltaTime;
+            yield return null;
+        }
+
+        surgeCooldownRemaining = 0f;
+        canSurge               = true;
+        _novaSurgeCoroutine    = null;
     }
 
     #endregion
@@ -1106,6 +1189,9 @@ public class SupernovaSprintController : MonoBehaviour
             groundStickyForce = _baseGroundStickyForce;
             surfaceAlignSpeed = _baseSurfaceAlignSpeed;
         }
+
+        // Re-apply surge bonus on top of whichever mode is now active
+        if (isNovaSurging) topSpeed += surgeSpeedBonus;
     }
 
     private void UpdateFOV()

@@ -68,11 +68,11 @@ public class SpeedLines : MonoBehaviour
         var emission          = _ps.emission;
         emission.rateOverTime = t * maxEmissionRate;
 
-        // Cyan tint above 60 m/s, white below
+        // Red during Nova Surge, cyan above 60 m/s, white otherwise
         var main = _ps.main;
-        main.startColor = speed >= cyanThreshold
-            ? new Color(0.55f, 0.95f, 1f, 1f)
-            : Color.white;
+        main.startColor = controller.isNovaSurging    ? new Color(1f, 0.2f, 0.1f, 1f)
+                        : speed >= cyanThreshold      ? new Color(0.55f, 0.95f, 1f, 1f)
+                        : Color.white;
     }
 
     // ── Particle system builder ───────────────────────────────────────────────

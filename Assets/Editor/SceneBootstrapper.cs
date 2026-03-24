@@ -120,6 +120,10 @@ public static class SceneBootstrapper
                 var matGuids = AssetDatabase.FindAssets("Mat_ThrusterGlow t:Material", new[] { "Assets/Materials" });
                 if (matGuids.Length > 0)
                     polarityVFX.glowMaterial = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(matGuids[0]));
+
+                var novaMatGuids = AssetDatabase.FindAssets("Mat_ThrusterNova t:Material", new[] { "Assets/Materials" });
+                if (novaMatGuids.Length > 0)
+                    polarityVFX.novaMaterial = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(novaMatGuids[0]));
             }
 
             // Add KineticBrakeVFX if not already on the player
