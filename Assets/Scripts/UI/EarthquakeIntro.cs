@@ -28,7 +28,7 @@ public class EarthquakeIntro : MonoBehaviour
         _audio             = gameObject.AddComponent<AudioSource>();
         _audio.playOnAwake = false;
         _audio.spatialBlend = 0f;
-        _audio.clip        = earthquakeClip;
+
     }
 
     private void Start()
@@ -45,10 +45,7 @@ public class EarthquakeIntro : MonoBehaviour
         {
             cam.StartShake(duration, magnitude);
             if (earthquakeClip != null)
-            {
-                _audio.volume = earthquakeVolume;
-                _audio.Play();
-            }
+                _audio.PlayOneShot(earthquakeClip, earthquakeVolume);
             yield return new WaitForSeconds(duration + interval);
         }
     }

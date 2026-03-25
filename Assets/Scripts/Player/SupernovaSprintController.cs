@@ -128,6 +128,22 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("How much turn speed is reduced while Nova Surge is active.")]
     public float surgeTurnSpeedReduction = 6f;
 
+    [Tooltip("How much brakeFriction is reduced while Nova Surge is active (less grip, more slide).")]
+    public float surgeBrakeFrictionReduction = 4f;
+
+    [Tooltip("How much brakeFrictionAngle is raised while Nova Surge is active (wider turning arc).")]
+    public float surgeBrakeFrictionAngleBonus = 20f;
+
+    [Tooltip("Multiplier applied to maxLeanAngle while Nova Surge is active (e.g. 0.5 = half lean).")]
+    [Range(0f, 1f)]
+    public float surgeLeanMultiplier = 0.5f;
+
+    [Tooltip("Instant velocity boost (m/s) added along the current travel direction on Nova Surge activation. Ignored if the player is stationary.")]
+    public float surgeActivationBoost = 5f;
+
+    [Tooltip("Acceleration bonus added while Nova Surge is active.")]
+    public float surgeAccelerationBonus = 10f;
+
     [Tooltip("How long the speed boost lasts (seconds).")]
     public float surgeDuration = 5f;
 
@@ -905,8 +921,16 @@ public class SupernovaSprintController : MonoBehaviour
         // ── Activate ──────────────────────────────────────────────────────────
         canSurge      = false;
         isNovaSurging = true;
-        topSpeed     += surgeSpeedBonus;
-        turnSpeed    -= surgeTurnSpeedReduction;
+        topSpeed          += surgeSpeedBonus;
+        acceleration      += surgeAccelerationBonus;
+        turnSpeed         -= surgeTurnSpeedReduction;
+        brakeFriction     -= surgeBrakeFrictionReduction;
+        brakeFrictionAngle += surgeBrakeFrictionAngleBonus;
+
+        // Instant velocity kick along current travel direction (ignored if stationary)
+        if (surgeActivationBoost > 0f && rb.linearVelocity.sqrMagnitude > 0.1f)
+            rb.linearVelocity += rb.linearVelocity.normalized * surgeActivationBoost;
+
         OnNovaSurge?.Invoke();
 
         // ── Active window ─────────────────────────────────────────────────────
@@ -920,8 +944,11 @@ public class SupernovaSprintController : MonoBehaviour
 
         // ── Deactivate boost ──────────────────────────────────────────────────
         isNovaSurging = false;
-        topSpeed     -= surgeSpeedBonus;
-        turnSpeed    += surgeTurnSpeedReduction;
+        topSpeed           -= surgeSpeedBonus;
+        acceleration       -= surgeAccelerationBonus;
+        turnSpeed          += surgeTurnSpeedReduction;
+        brakeFriction      += surgeBrakeFrictionReduction;
+        brakeFrictionAngle -= surgeBrakeFrictionAngleBonus;
 
         // ── Cooldown ──────────────────────────────────────────────────────────
         surgeCooldownRemaining = surgeCooldown;
@@ -1150,6 +1177,7 @@ public class SupernovaSprintController : MonoBehaviour
         if (visualModel == null) return;
 
         float   effectiveLean = isRocketMode ? maxLeanAngle * 2f : maxLeanAngle;
+        if (isNovaSurging) effectiveLean *= surgeLeanMultiplier;
         float   targetLean = -moveInput.x * effectiveLean; // Negative: lean into the turn
         Vector3 euler      = visualModel.localEulerAngles;
 
@@ -1197,7 +1225,7 @@ public class SupernovaSprintController : MonoBehaviour
     private void UpdateFOV()
     {
         if (_camera == null) return;
-        float targetFOV = isRocketMode ? rocketFOV : normalFOV;
+        float targetFOV = (isRocketMode ? rocketFOV : normalFOV) + (isNovaSurging ? 7.5f : 0f);
         _camera.fieldOfView = Mathf.Lerp(_camera.fieldOfView, targetFOV, fovLerpSpeed * Time.deltaTime);
     }
 

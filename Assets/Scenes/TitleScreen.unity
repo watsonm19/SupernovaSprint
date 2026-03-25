@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleScreen
   switchClip: {fileID: 8300000, guid: 4b83aef684b12164883ceadc6deef0e9, type: 3}
-  startGameClip: {fileID: 8300000, guid: ed6faa5070a644e4b8ac5c2595496bda, type: 3}
+  startGameClip: {fileID: 8300000, guid: 53c1977fc9af54141a35c5ecddc92c97, type: 3}
 --- !u!4 &259110989
 Transform:
   m_ObjectHideFlags: 0

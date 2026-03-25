@@ -28,6 +28,16 @@ public class PolarityVFX : MonoBehaviour
     [Tooltip("The Jetpack empty GO — the pentagon glow is created here at runtime.")]
     public Transform glowParent;
 
+    [Header("Nova Surge Thruster")]
+    [Tooltip("X size multiplier for thruster particles during Nova Surge.")]
+    public float surgeThrusterScaleX = 1.3f;
+
+    [Tooltip("Y size multiplier for thruster particles during Nova Surge.")]
+    public float surgeThrusterScaleY = 1.3f;
+
+    [Tooltip("Speed multiplier for thruster particles during Nova Surge.")]
+    public float surgeThrusterSpeedMultiplier = 2f;
+
     [Header("Glow Appearance")]
     [Tooltip("Color of the pentagon glow.")]
     public Color glowColor = Color.cyan;
@@ -52,6 +62,11 @@ public class PolarityVFX : MonoBehaviour
     private GameObject _thrusterGlow;
     private MeshRenderer _glowRenderer;
 
+    // Baseline thruster values (snapshotted on Start)
+    private float _baseThrusterSizeX;
+    private float _baseThrusterSizeY;
+    private float _baseThrusterSpeed;
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     private void Start()
@@ -67,7 +82,13 @@ public class PolarityVFX : MonoBehaviour
         _thrusterGlow.SetActive(false);
 
         if (jetpackThruster != null)
+        {
+            var main = jetpackThruster.main;
+            _baseThrusterSizeX = main.startSizeX.constant;
+            _baseThrusterSizeY = main.startSizeY.constant;
+            _baseThrusterSpeed = main.startSpeed.constant;
             jetpackThruster.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
     }
 
     private void Update()
@@ -88,6 +109,23 @@ public class PolarityVFX : MonoBehaviour
 
             if (_glowRenderer != null)
                 _glowRenderer.material = (surging && novaMaterial != null) ? novaMaterial : glowMaterial;
+
+            if (jetpackThruster != null)
+            {
+                var main = jetpackThruster.main;
+                if (surging)
+                {
+                    main.startSizeX = new ParticleSystem.MinMaxCurve(_baseThrusterSizeX * surgeThrusterScaleX);
+                    main.startSizeY = new ParticleSystem.MinMaxCurve(_baseThrusterSizeY * surgeThrusterScaleY);
+                    main.startSpeed = new ParticleSystem.MinMaxCurve(_baseThrusterSpeed * surgeThrusterSpeedMultiplier);
+                }
+                else
+                {
+                    main.startSizeX = new ParticleSystem.MinMaxCurve(_baseThrusterSizeX);
+                    main.startSizeY = new ParticleSystem.MinMaxCurve(_baseThrusterSizeY);
+                    main.startSpeed = new ParticleSystem.MinMaxCurve(_baseThrusterSpeed);
+                }
+            }
         }
 
         // Thruster — plays only when in Rocket Mode and actually moving.

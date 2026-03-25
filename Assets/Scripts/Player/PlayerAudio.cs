@@ -23,6 +23,8 @@ public class PlayerAudio : MonoBehaviour
     public AudioClip thruster;
     public AudioClip forceBoost;
     public AudioClip kineticBrake;
+    public AudioClip novaSurgeActivate;
+    public AudioClip novaSurgeRecharged;
 
     [Header("Footstep")]
     [Tooltip("Step interval at low speed (seconds).")]
@@ -37,14 +39,19 @@ public class PlayerAudio : MonoBehaviour
     public float homingAttackVolume = 1f;
     public float homingHitVolume    = 1f;
     public float forceBoostVolume   = 1f;
-    public float kineticBrakeVolume = 1f;
+    public float kineticBrakeVolume    = 1f;
+    public float novaSurgeActivateVolume  = 1f;
+    public float novaSurgeRechargedVolume = 1f;
     public float thrusterVolume     = 0.5f;
+    public float thrusterPitch      = 1.25f;
+    public float thrusterSurgePitch = 2f;
 
     // ── Private ───────────────────────────────────────────────────────────────
 
     private AudioSource _sfx;
     private AudioSource _thrusterSource;
     private float       _footstepTimer;
+    private bool        _wasOnCooldown;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -65,6 +72,7 @@ public class PlayerAudio : MonoBehaviour
         _thrusterSource.playOnAwake = false;
         _thrusterSource.spatialBlend = 0f;
         _thrusterSource.volume      = thrusterVolume;
+        _thrusterSource.pitch       = thrusterPitch;
     }
 
     private void OnEnable()
@@ -77,6 +85,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnForceBoost   += PlayForceBoost;
         controller.OnKineticBrake += PlayKineticBrake;
         controller.OnRocketToggle += PlayRocketToggle;
+        controller.OnNovaSurge    += PlayNovaSurgeActivate;
     }
 
     private void OnDisable()
@@ -89,6 +98,7 @@ public class PlayerAudio : MonoBehaviour
         controller.OnForceBoost   -= PlayForceBoost;
         controller.OnKineticBrake -= PlayKineticBrake;
         controller.OnRocketToggle -= PlayRocketToggle;
+        controller.OnNovaSurge    -= PlayNovaSurgeActivate;
     }
 
     private void Update()
@@ -96,6 +106,7 @@ public class PlayerAudio : MonoBehaviour
         if (controller == null) return;
         HandleFootsteps();
         HandleThruster();
+        HandleSurgeRecharged();
     }
 
     // ── Footsteps ─────────────────────────────────────────────────────────────
@@ -129,6 +140,8 @@ public class PlayerAudio : MonoBehaviour
             _thrusterSource.Play();
         else if (!shouldPlay && _thrusterSource.isPlaying)
             _thrusterSource.Stop();
+
+        _thrusterSource.pitch = controller.isNovaSurging ? thrusterSurgePitch : thrusterPitch;
     }
 
     // ── Event callbacks ───────────────────────────────────────────────────────
@@ -139,7 +152,16 @@ public class PlayerAudio : MonoBehaviour
     private void PlayHomingHit()             => Play(homingHit, homingHitVolume);
     private void PlayForceBoost()            => Play(forceBoost, forceBoostVolume);
     private void PlayKineticBrake()          => Play(kineticBrake, kineticBrakeVolume);
-    private void PlayRocketToggle(bool on)   => Play(on ? rocketToggleOn : rocketToggleOff);
+    private void PlayRocketToggle(bool on)    => Play(on ? rocketToggleOn : rocketToggleOff);
+    private void PlayNovaSurgeActivate()      => Play(novaSurgeActivate, novaSurgeActivateVolume);
+
+    private void HandleSurgeRecharged()
+    {
+        bool onCooldown = controller.surgeCooldownRemaining > 0f;
+        if (_wasOnCooldown && !onCooldown)
+            Play(novaSurgeRecharged, novaSurgeRechargedVolume);
+        _wasOnCooldown = onCooldown;
+    }
 
     // ── Helper ────────────────────────────────────────────────────────────────
 

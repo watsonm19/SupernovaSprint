@@ -118,6 +118,13 @@ public class SupernovaHUD : MonoBehaviour
     private TextMeshProUGUI _checkpointLabel;
     private Coroutine       _checkpointCoroutine;
 
+    // Nova Surge battery
+    private Image[] _batteryBars;
+    private int     _barsRemaining  = 3;
+    private float   _surgeBarTimer  = 0f;
+    private bool    _wasNovaSurging = false;
+    private bool    _wasOnCooldown  = false;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     private void Awake()
@@ -133,6 +140,7 @@ public class SupernovaHUD : MonoBehaviour
         _audioSource.spatialBlend = 0f;
 
         BuildCheckpointLabel();
+        BuildBatteryDisplay();
         RefreshTimerDisplay();
     }
 
@@ -198,6 +206,7 @@ public class SupernovaHUD : MonoBehaviour
     {
         TickTimer();
         RefreshSpeedometer();
+        UpdateBattery();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -331,6 +340,127 @@ public class SupernovaHUD : MonoBehaviour
         {
             speedText.transform.localScale = _speedBaseScale;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  NOVA SURGE BATTERY
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void BuildBatteryDisplay()
+    {
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas == null || speedText == null) return;
+
+        // Container — anchored top-right, sitting to the left of the speedometer.
+        // Adjust anchoredPosition.x if the battery overlaps the speed number.
+        var go = new GameObject("NovaBattery");
+        go.transform.SetParent(canvas.transform, false);
+
+        var rt          = go.AddComponent<RectTransform>();
+        rt.anchorMin    = new Vector2(1f, 1f);
+        rt.anchorMax    = new Vector2(1f, 1f);
+        rt.pivot        = new Vector2(1f, 1f);
+        rt.sizeDelta    = new Vector2(72f, 28f);
+        rt.anchoredPosition = new Vector2(-130f, -28f);
+
+        // Outline border
+        var border    = new GameObject("Border");
+        border.transform.SetParent(go.transform, false);
+        var borderImg = border.AddComponent<Image>();
+        borderImg.color = new Color(1f, 1f, 1f, 0.35f);
+        var borderRT    = border.GetComponent<RectTransform>();
+        borderRT.anchorMin = Vector2.zero;
+        borderRT.anchorMax = Vector2.one;
+        borderRT.offsetMin = Vector2.zero;
+        borderRT.offsetMax = Vector2.zero;
+
+        // Terminal nub on the right
+        var nub    = new GameObject("Nub");
+        nub.transform.SetParent(go.transform, false);
+        var nubImg = nub.AddComponent<Image>();
+        nubImg.color = new Color(1f, 1f, 1f, 0.35f);
+        var nubRT          = nub.GetComponent<RectTransform>();
+        nubRT.anchorMin        = new Vector2(1f, 0.3f);
+        nubRT.anchorMax        = new Vector2(1f, 0.7f);
+        nubRT.pivot            = new Vector2(0f, 0.5f);
+        nubRT.anchoredPosition = Vector2.zero;
+        nubRT.sizeDelta        = new Vector2(8f, 0f);
+
+        // 3 bars left to right (bar 0 = leftmost, bar 2 = rightmost — drains first)
+        const float padding = 5f;
+        float barW = (rt.sizeDelta.x - padding * 4f) / 3f;
+
+        _batteryBars = new Image[3];
+        for (int i = 0; i < 3; i++)
+        {
+            var barGo = new GameObject($"Bar{i}");
+            barGo.transform.SetParent(go.transform, false);
+            var img = barGo.AddComponent<Image>();
+            _batteryBars[i] = img;
+
+            var barRT              = barGo.GetComponent<RectTransform>();
+            barRT.anchorMin        = new Vector2(0f, 0f);
+            barRT.anchorMax        = new Vector2(0f, 1f);
+            barRT.pivot            = new Vector2(0f, 0.5f);
+            barRT.anchoredPosition = new Vector2(padding + i * (barW + padding), 0f);
+            barRT.sizeDelta        = new Vector2(barW, -padding * 2f);
+        }
+
+        RefreshBattery();
+    }
+
+    private void RefreshBattery()
+    {
+        if (_batteryBars == null) return;
+        for (int i = 0; i < _batteryBars.Length; i++)
+            _batteryBars[i].color = i < _barsRemaining
+                ? Color.cyan
+                : new Color(0.15f, 0.15f, 0.15f, 0.6f);
+    }
+
+    private void UpdateBattery()
+    {
+        if (playerController == null || _batteryBars == null) return;
+
+        bool surging = playerController.isNovaSurging;
+
+        bool onCooldown = playerController.surgeCooldownRemaining > 0f;
+
+        if (surging && !_wasNovaSurging)
+        {
+            // Surge just started — fill and begin draining
+            _surgeBarTimer = 0f;
+            _barsRemaining = 3;
+            RefreshBattery();
+        }
+        else if (!surging && _wasNovaSurging)
+        {
+            // Surge just ended (naturally or kinetic brake) — drain any remaining bars
+            _barsRemaining = 0;
+            RefreshBattery();
+        }
+        else if (surging)
+        {
+            // Each bar represents one third of surgeDuration
+            _surgeBarTimer += Time.deltaTime;
+            float barDuration = playerController.surgeDuration / 3f;
+            int   drained     = Mathf.Min(Mathf.FloorToInt(_surgeBarTimer / barDuration), 3);
+            int   newBars     = 3 - drained;
+            if (newBars != _barsRemaining)
+            {
+                _barsRemaining = newBars;
+                RefreshBattery();
+            }
+        }
+        else if (_wasOnCooldown && !onCooldown && _barsRemaining < 3)
+        {
+            // Cooldown just finished — refill
+            _barsRemaining = 3;
+            RefreshBattery();
+        }
+
+        _wasNovaSurging = surging;
+        _wasOnCooldown  = onCooldown;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

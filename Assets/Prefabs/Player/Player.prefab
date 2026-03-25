@@ -142,8 +142,13 @@ MonoBehaviour:
   forceBoostSpeed: 21
   forceBoostUpForce: 8
   brakeDuration: 0.25
-  surgeSpeedBonus: 5
-  surgeTurnSpeedReduction: 6
+  surgeSpeedBonus: 6.1
+  surgeTurnSpeedReduction: 9
+  surgeBrakeFrictionReduction: 9
+  surgeBrakeFrictionAngleBonus: 45
+  surgeLeanMultiplier: 0.5
+  surgeActivationBoost: 5
+  surgeAccelerationBonus: 10
   surgeDuration: 5
   surgeCooldown: 30
   visualModel: {fileID: 971701413174335510}
@@ -212,6 +217,9 @@ MonoBehaviour:
   controller: {fileID: 7168267401702996782}
   jetpackThruster: {fileID: 4494093061416481782}
   glowParent: {fileID: 2851285649621100293}
+  surgeThrusterScaleX: 2
+  surgeThrusterScaleY: 2
+  surgeThrusterSpeedMultiplier: 2.5
   glowColor: {r: 0, g: 1, b: 1, a: 1}
   glowRadius: 0.0002
   glowOffset: {x: 0, y: -0.00075, z: 0.000005}
@@ -240,16 +248,22 @@ MonoBehaviour:
   thruster: {fileID: 8300000, guid: 9b472274e37228c4295c108120a364fb, type: 3}
   forceBoost: {fileID: 8300000, guid: c03c24e016a7a16498719415f824a424, type: 3}
   kineticBrake: {fileID: 8300000, guid: d66beef7f17767e479b42630879f3db2, type: 3}
+  novaSurgeActivate: {fileID: 8300000, guid: 53c1977fc9af54141a35c5ecddc92c97, type: 3}
+  novaSurgeRecharged: {fileID: 8300000, guid: 0eb3fc6afa13f0640a592cd9cc6041a3, type: 3}
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
-  footstepVolume: 1.5
+  footstepVolume: 1.25
   jumpVolume: 0.65
   landVolume: 1.5
   homingAttackVolume: 1.8
   homingHitVolume: 2
   forceBoostVolume: 1
   kineticBrakeVolume: 1
+  novaSurgeActivateVolume: 2
+  novaSurgeRechargedVolume: 0.75
   thrusterVolume: 1
+  thrusterPitch: 1.25
+  thrusterSurgePitch: 2
 --- !u!114 &8934439916513361943
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -902,7 +916,7 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 0
-    maxNumParticles: 1000
+    maxNumParticles: 150
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
