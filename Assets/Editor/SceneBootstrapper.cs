@@ -222,10 +222,10 @@ public static class SceneBootstrapper
             msGO.AddComponent<MissionStatement>();
 
             // ── Earthquake intro shake ─────────────────────────────────────────
-            var eqGO = new GameObject("EarthquakeIntro");
+            var eqGO = new GameObject("Earthquake");
             eqGO.transform.SetParent(root.transform, false);
-            var eq = eqGO.AddComponent<EarthquakeIntro>();
-            eq.earthquakeVolume = 5f;
+            var eq = eqGO.AddComponent<Earthquake>();
+            eq.earthquakeVolume = 1.45f;
             var eqGuids = AssetDatabase.FindAssets("earthquake t:AudioClip", new[] { "Assets/Audio/SFX" });
             if (eqGuids.Length > 0)
                 eq.earthquakeClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(eqGuids[0]));

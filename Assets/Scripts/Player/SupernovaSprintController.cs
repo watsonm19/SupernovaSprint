@@ -121,6 +121,9 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Duration over which horizontal velocity is lerped to zero (seconds).")]
     public float brakeDuration = 0.25f;
 
+    [Tooltip("Instant downward velocity added when Kinetic Brake is triggered while airborne (m/s).")]
+    public float brakeAirDownwardKick = 8f;
+
     [Header("── Nova Surge ───────────────────────────────────────────────")]
     [Tooltip("Flat top speed bonus added on top of Normal or Rocket Mode speed (m/s).")]
     public float surgeSpeedBonus = 5f;
@@ -867,9 +870,12 @@ public class SupernovaSprintController : MonoBehaviour
             state = PlayerState.Airborne;
         }
 
-        // Cancel Nova Surge active window — cooldown still triggers inside the coroutine
-        if (isNovaSurging)
-            isNovaSurging = false;
+        // If airborne, kick the player downward so the brake also drives them toward the ground
+        if (state != PlayerState.Grounded)
+        {
+            Vector3 v = rb.linearVelocity;
+            rb.linearVelocity = new Vector3(v.x, Mathf.Min(v.y, -brakeAirDownwardKick), v.z);
+        }
 
         _kineticBrakeCoroutine = StartCoroutine(KineticBrakeRoutine());
         OnKineticBrake?.Invoke();
@@ -912,8 +918,36 @@ public class SupernovaSprintController : MonoBehaviour
         if (!_novaSurgeInputPressed) return;
         _novaSurgeInputPressed = false;
         if (!canSurge) return;
+        if (!isRocketMode) return; // Nova Surge is only available in Rocket Mode
 
         _novaSurgeCoroutine = StartCoroutine(NovaSurgeRoutine());
+    }
+
+    // Called when Rocket Mode is turned off while Nova Surge is active.
+    // Stops the coroutine cleanly, reverts the two stats ApplyPolarityMode doesn't own,
+    // and starts a cooldown-only countdown (the rest resets via ApplyPolarityMode).
+    private void CancelNovaSurge()
+    {
+        if (_novaSurgeCoroutine != null)
+            StopCoroutine(_novaSurgeCoroutine);
+        isNovaSurging      = false;
+        turnSpeed         += surgeTurnSpeedReduction;
+        brakeFrictionAngle -= surgeBrakeFrictionAngleBonus;
+        // topSpeed, acceleration, brakeFriction are restored by the ApplyPolarityMode call that follows
+        _novaSurgeCoroutine = StartCoroutine(NovaSurgeCooldownOnly());
+    }
+
+    private IEnumerator NovaSurgeCooldownOnly()
+    {
+        surgeCooldownRemaining = surgeCooldown;
+        while (surgeCooldownRemaining > 0f)
+        {
+            surgeCooldownRemaining -= Time.deltaTime;
+            yield return null;
+        }
+        surgeCooldownRemaining = 0f;
+        canSurge            = true;
+        _novaSurgeCoroutine = null;
     }
 
     private IEnumerator NovaSurgeRoutine()
@@ -1210,6 +1244,7 @@ public class SupernovaSprintController : MonoBehaviour
         }
         else
         {
+            if (isNovaSurging) CancelNovaSurge(); // Surge is rocket-only; cancel on mode exit
             topSpeed          = _baseTopSpeed;
             acceleration      = _baseAcceleration;
             brakeFriction     = _baseBrakeFriction;

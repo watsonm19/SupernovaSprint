@@ -144,12 +144,12 @@ MonoBehaviour:
   brakeDuration: 0.25
   surgeSpeedBonus: 6.1
   surgeTurnSpeedReduction: 9
-  surgeBrakeFrictionReduction: 9
+  surgeBrakeFrictionReduction: 0.9
   surgeBrakeFrictionAngleBonus: 45
   surgeLeanMultiplier: 0.5
   surgeActivationBoost: 5
   surgeAccelerationBonus: 10
-  surgeDuration: 5
+  surgeDuration: 6
   surgeCooldown: 30
   visualModel: {fileID: 971701413174335510}
   maxLeanAngle: 25

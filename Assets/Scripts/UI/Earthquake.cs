@@ -1,5 +1,5 @@
 // ═════════════════════════════════════════════════════════════════════════════
-//  EarthquakeIntro.cs
+//  Earthquake.cs
 //  Plays a camera rumble at scene start, then repeats every interval seconds.
 //  Wired up automatically by SceneBootstrapper.
 // ═════════════════════════════════════════════════════════════════════════════
@@ -7,7 +7,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class EarthquakeIntro : MonoBehaviour
+public class Earthquake : MonoBehaviour
 {
     [Tooltip("How many seconds each rumble lasts.")]
     public float duration  = 5f;
@@ -19,7 +19,7 @@ public class EarthquakeIntro : MonoBehaviour
     public float interval  = 23f;
 
     public AudioClip earthquakeClip;
-    public float earthquakeVolume = 5f;
+    public float earthquakeVolume = 1.45f;
 
     private AudioSource _audio;
 
