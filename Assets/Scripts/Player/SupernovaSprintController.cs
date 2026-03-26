@@ -950,6 +950,12 @@ public class SupernovaSprintController : MonoBehaviour
         _novaSurgeCoroutine = null;
     }
 
+    // Called externally (e.g. by a homing target) to restore force boost availability.
+    public void RechargeForceBoost()
+    {
+        forceBoostAvailable = true;
+    }
+
     // Called externally (e.g. by a recharge homing target) to instantly reset the cooldown.
     // Does nothing if Nova Surge is currently active.
     public void RechargeSurge()

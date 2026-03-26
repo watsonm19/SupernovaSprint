@@ -11,10 +11,11 @@ public class HomingTarget : MonoBehaviour
 
     private void OnHomingHit()
     {
-        if (rechargeSurge)
+        var player = Object.FindFirstObjectByType<SupernovaSprintController>();
+        if (player != null)
         {
-            var player = Object.FindFirstObjectByType<SupernovaSprintController>();
-            if (player != null) player.RechargeSurge();
+            player.RechargeForceBoost();
+            if (rechargeSurge) player.RechargeSurge();
         }
 
         // Coroutine must run on a persistent object because disabling this
