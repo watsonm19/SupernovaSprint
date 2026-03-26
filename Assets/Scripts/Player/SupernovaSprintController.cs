@@ -950,6 +950,18 @@ public class SupernovaSprintController : MonoBehaviour
         _novaSurgeCoroutine = null;
     }
 
+    // Called externally (e.g. by a recharge homing target) to instantly reset the cooldown.
+    // Does nothing if Nova Surge is currently active.
+    public void RechargeSurge()
+    {
+        if (isNovaSurging) return;
+        if (_novaSurgeCoroutine != null)
+            StopCoroutine(_novaSurgeCoroutine);
+        _novaSurgeCoroutine    = null;
+        surgeCooldownRemaining = 0f;
+        canSurge               = true;
+    }
+
     private IEnumerator NovaSurgeRoutine()
     {
         // ── Activate ──────────────────────────────────────────────────────────
