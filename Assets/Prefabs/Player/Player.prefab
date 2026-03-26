@@ -143,12 +143,12 @@ MonoBehaviour:
   forceBoostUpForce: 8
   brakeDuration: 0.25
   brakeAirDownwardKick: 4
-  surgeSpeedBonus: 6.1
+  surgeSpeedBonus: 7.4
   surgeTurnSpeedReduction: 9
   surgeBrakeFrictionReduction: 0.9
   surgeBrakeFrictionAngleBonus: 45
   surgeLeanMultiplier: 0.5
-  surgeActivationBoost: 5
+  surgeActivationBoost: 8.75
   surgeAccelerationBonus: 10
   surgeDuration: 6
   surgeCooldown: 30
