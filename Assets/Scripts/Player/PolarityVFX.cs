@@ -46,7 +46,7 @@ public class PolarityVFX : MonoBehaviour
     public float glowRadius = 0.0002f;
 
     [Tooltip("Local position offset from the Glow Parent. Tweak this to place the pentagon correctly.")]
-    public Vector3 glowOffset = new Vector3(0f, 0.00075f, 0.000005f);
+    public Vector3 glowOffset = new Vector3(0f, 0.00075f, 0.000029f);
 
     [Tooltip("Pre-saved material for the glow. Assign Mat_ThrusterGlow from Assets/Materials/.")]
     public Material glowMaterial;

@@ -115,14 +115,14 @@ public class SupernovaSprintController : MonoBehaviour
     public float forceBoostSpeed = 20f;
 
     [Tooltip("Upward velocity added alongside the horizontal dash for a slight lift.")]
-    public float forceBoostUpForce = 6f;
+    public float forceBoostUpForce = 8f;
 
     [Header("── Kinetic Brake ─────────────────────────────────────────────")]
     [Tooltip("Duration over which horizontal velocity is lerped to zero (seconds).")]
     public float brakeDuration = 0.25f;
 
     [Tooltip("Instant downward velocity added when Kinetic Brake is triggered while airborne (m/s).")]
-    public float brakeAirDownwardKick = 8f;
+    public float brakeAirDownwardKick = 4f;
 
     [Header("── Nova Surge ───────────────────────────────────────────────")]
     [Tooltip("Flat top speed bonus added on top of Normal or Rocket Mode speed (m/s).")]

@@ -368,12 +368,13 @@ public class PauseManager : MonoBehaviour
             ("Force Boost",           "X  /  Q  (while airborne)"),
             ("Kinetic Brake",         "B  /  E"),
             ("Toggle Rocket Mode",    "LB or RB  /  Shift"),
+            ("Nova Surge",            "Y  /  Tab  (Rocket Mode only)"),
             ("Return to Checkpoint",  "Select  /  Backspace"),
             ("Pause",                 "Start  /  Escape"),
         };
 
         float startY  = 210f;
-        float spacing = 72f;
+        float spacing = 65f;
 
         for (int i = 0; i < controls.Length; i++)
         {

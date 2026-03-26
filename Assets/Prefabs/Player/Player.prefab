@@ -142,6 +142,7 @@ MonoBehaviour:
   forceBoostSpeed: 21
   forceBoostUpForce: 8
   brakeDuration: 0.25
+  brakeAirDownwardKick: 4
   surgeSpeedBonus: 6.1
   surgeTurnSpeedReduction: 9
   surgeBrakeFrictionReduction: 0.9
@@ -222,7 +223,7 @@ MonoBehaviour:
   surgeThrusterSpeedMultiplier: 2.5
   glowColor: {r: 0, g: 1, b: 1, a: 1}
   glowRadius: 0.0002
-  glowOffset: {x: 0, y: -0.00075, z: 0.000005}
+  glowOffset: {x: 0, y: -0.00075, z: 0.000029}
   glowMaterial: {fileID: 2100000, guid: 65b511f422652e84181275c943579573, type: 2}
   novaMaterial: {fileID: 2100000, guid: f1dcece0ce81c68419ba95fe2ca86061, type: 2}
 --- !u!114 &6223953827598293972
