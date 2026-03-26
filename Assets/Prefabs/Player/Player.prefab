@@ -250,7 +250,7 @@ MonoBehaviour:
   forceBoost: {fileID: 8300000, guid: c03c24e016a7a16498719415f824a424, type: 3}
   kineticBrake: {fileID: 8300000, guid: d66beef7f17767e479b42630879f3db2, type: 3}
   novaSurgeActivate: {fileID: 8300000, guid: 53c1977fc9af54141a35c5ecddc92c97, type: 3}
-  novaSurgeRecharged: {fileID: 8300000, guid: 0eb3fc6afa13f0640a592cd9cc6041a3, type: 3}
+  novaSurgeRecharged: {fileID: 8300000, guid: 4305428dabbeb6b42ae6de1dccf453ff, type: 3}
   footstepIntervalSlow: 0.92
   footstepIntervalFast: 0.4
   footstepVolume: 1.25

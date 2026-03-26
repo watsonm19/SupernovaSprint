@@ -258,11 +258,12 @@ public class SupernovaHUD : MonoBehaviour
     {
         if (timerText == null) return;
 
-        float display  = Mathf.Max(_remaining, 0f);
-        int minutes    = (int)(display / 60f);
-        int seconds    = (int)(display % 60f);
+        float display      = Mathf.Max(_remaining, 0f);
+        int   minutes      = (int)(display / 60f);
+        int   seconds      = (int)(display % 60f);
+        int   centiseconds = (int)(display * 100f) % 100;
 
-        timerText.text = $"{minutes:D2}:{seconds:D2}";
+        timerText.text = $"{minutes:D2}:{seconds:D2}.<size=70%>{centiseconds:D2}</size>";
 
         // Flash red when time is running low
         if (_timerRunning && _remaining <= flashThreshold && !_expired)
