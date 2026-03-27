@@ -50,11 +50,14 @@ public class SupernovaHUD : MonoBehaviour
     [Tooltip("Colour at the mid range (10–18 m/s). Lerps from colorLow at 10 m/s.")]
     public Color colorMid  = Color.yellow;
 
-    [Tooltip("Colour above the high threshold (18+ m/s). Lerps from colorMid at 18 m/s.")]
-    public Color colorHigh = new Color(1f, 0.42f, 0.08f); // red-orange
+    [Tooltip("Colour at high speed (100–150). Lerps from colorMid at 100.")]
+    public Color colorHigh  = new Color(0f, 0.9f, 0.2f);  // green
 
-    [Tooltip("Colour when speed exceeds 100 (boost state — above normal top speed).")]
+    [Tooltip("Colour at boost speed (150–200). Lerps from colorHigh at 150.")]
     public Color colorBoost = Color.cyan;
+
+    [Tooltip("Colour at extreme speed (205+).")]
+    public Color colorMax   = Color.red;
 
     [Tooltip("Display value where the colour starts shifting from white to yellow.")]
     public float thresholdLow  = 50f;
@@ -120,10 +123,10 @@ public class SupernovaHUD : MonoBehaviour
 
     // Nova Surge battery
     private Image[] _batteryBars;
+    private Image   _surgeQueueDot;
     private int     _barsRemaining  = 3;
     private float   _surgeBarTimer  = 0f;
     private bool    _wasNovaSurging = false;
-    private bool    _wasOnCooldown  = false;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -144,8 +147,25 @@ public class SupernovaHUD : MonoBehaviour
         RefreshTimerDisplay();
     }
 
-    private void OnEnable()  => CheckpointManager.OnCheckpointReached += ShowCheckpointNotification;
-    private void OnDisable() => CheckpointManager.OnCheckpointReached -= ShowCheckpointNotification;
+    private void OnEnable()
+    {
+        CheckpointManager.OnCheckpointReached += ShowCheckpointNotification;
+        if (playerController != null)
+            playerController.OnSurgeRecharged += OnSurgeRecharged;
+    }
+
+    private void OnDisable()
+    {
+        CheckpointManager.OnCheckpointReached -= ShowCheckpointNotification;
+        if (playerController != null)
+            playerController.OnSurgeRecharged -= OnSurgeRecharged;
+    }
+
+    private void OnSurgeRecharged()
+    {
+        _barsRemaining = 3;
+        RefreshBattery();
+    }
 
     private void BuildCheckpointLabel()
     {
@@ -295,11 +315,12 @@ public class SupernovaHUD : MonoBehaviour
 
         // ── Colour ────────────────────────────────────────────────────────────
         //
-        //  Thresholds are on the 0–100 display scale (not raw m/s).
-        //  0 → thresholdLow             : white
-        //  thresholdLow → thresholdHigh : lerp white → yellow
-        //  thresholdHigh → 100          : lerp yellow → red-orange
-        //  100+                         : lerp red-orange → cyan (boost)
+        //  0   → 50  : white
+        //  50  → 100 : white → yellow
+        //  100 → 150 : yellow → green
+        //  150 → 200 : green → cyan
+        //  200 → 205 : cyan → red (brief transition)
+        //  205+      : red
         Color targetColor;
         if (displayValue < thresholdLow)
         {
@@ -310,17 +331,24 @@ public class SupernovaHUD : MonoBehaviour
             float t = (displayValue - thresholdLow) / (thresholdHigh - thresholdLow);
             targetColor = Color.Lerp(colorLow, colorMid, t);
         }
-        else if (displayValue < 151)
+        else if (displayValue < 150)
         {
-            // 100–150: lerp yellow → red-orange
             float t = Mathf.Clamp01((displayValue - thresholdHigh) / 50f);
             targetColor = Color.Lerp(colorMid, colorHigh, t);
         }
+        else if (displayValue < 201)
+        {
+            float t = Mathf.Clamp01((displayValue - 150f) / 51f);
+            targetColor = Color.Lerp(colorHigh, colorBoost, t);
+        }
+        else if (displayValue < 205)
+        {
+            float t = Mathf.Clamp01((displayValue - 201f) / 4f);
+            targetColor = Color.Lerp(colorBoost, colorMax, t);
+        }
         else
         {
-            // 151–200: lerp red-orange → cyan (rocket mode)
-            float t = Mathf.Clamp01((displayValue - 151f) / 49f);
-            targetColor = Color.Lerp(colorHigh, colorBoost, t);
+            targetColor = colorMax;
         }
         speedText.color = targetColor;
 
@@ -331,8 +359,8 @@ public class SupernovaHUD : MonoBehaviour
         //  Above 100 (boost): frequency and amplitude are doubled for extra urgency.
         if (displayValue >= thresholdHigh)
         {
-            float freqMult = displayValue >= 151 ? 2f : 1f;
-            float ampMult  = displayValue >= 151 ? 2f : 1f;
+            float freqMult = displayValue >= 150 ? 2f : 1f;
+            float ampMult  = displayValue >= 150 ? 2f : 1f;
             float sine  = Mathf.Sin(Time.time * pulseFrequency * freqMult * Mathf.PI * 2f);
             float scale = 1f + sine * pulseAmplitude * ampMult;
             speedText.transform.localScale = _speedBaseScale * scale;
@@ -407,6 +435,21 @@ public class SupernovaHUD : MonoBehaviour
             barRT.sizeDelta        = new Vector2(barW, -padding * 2f);
         }
 
+        // Recharge-queued dot — small cyan circle to the left of the battery container
+        var dotGo = new GameObject("SurgeQueueDot");
+        dotGo.transform.SetParent(canvas.transform, false);
+        _surgeQueueDot       = dotGo.AddComponent<Image>();
+        _surgeQueueDot.color  = Color.cyan;
+        _surgeQueueDot.sprite = MakeCircleSprite(32);
+        var dotRT                = dotGo.GetComponent<RectTransform>();
+        dotRT.anchorMin          = new Vector2(1f, 1f);
+        dotRT.anchorMax          = new Vector2(1f, 1f);
+        dotRT.pivot              = new Vector2(1f, 0.5f);
+        dotRT.sizeDelta          = new Vector2(20f, 20f);
+        // Position it just to the left of the battery container (which starts at x=-130, width=72)
+        dotRT.anchoredPosition   = new Vector2(-130f - 72f - 18f, -28f - 14f);
+        _surgeQueueDot.gameObject.SetActive(false);
+
         RefreshBattery();
     }
 
@@ -425,8 +468,6 @@ public class SupernovaHUD : MonoBehaviour
 
         bool surging = playerController.isNovaSurging;
 
-        bool onCooldown = playerController.surgeCooldownRemaining > 0f;
-
         if (surging && !_wasNovaSurging)
         {
             // Surge just started — fill and begin draining
@@ -436,9 +477,13 @@ public class SupernovaHUD : MonoBehaviour
         }
         else if (!surging && _wasNovaSurging)
         {
-            // Surge just ended (naturally or kinetic brake) — drain any remaining bars
-            _barsRemaining = 0;
-            RefreshBattery();
+            // Surge just ended — drain bars unless OnSurgeRecharged already refilled them
+            // (canSurge true means a queued recharge fired before this Update ran)
+            if (!playerController.canSurge)
+            {
+                _barsRemaining = 0;
+                RefreshBattery();
+            }
         }
         else if (surging)
         {
@@ -453,15 +498,26 @@ public class SupernovaHUD : MonoBehaviour
                 RefreshBattery();
             }
         }
-        else if (_wasOnCooldown && !onCooldown && _barsRemaining < 3)
-        {
-            // Cooldown just finished — refill
-            _barsRemaining = 3;
-            RefreshBattery();
-        }
 
         _wasNovaSurging = surging;
-        _wasOnCooldown  = onCooldown;
+
+        // Show dot when a recharge is queued, hide once the battery is back
+        if (_surgeQueueDot != null)
+            _surgeQueueDot.gameObject.SetActive(playerController.surgeRechargeQueued);
+    }
+
+    private static Sprite MakeCircleSprite(int size)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float r = size * 0.5f;
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - r + 0.5f, dy = y - r + 0.5f;
+                tex.SetPixel(x, y, dx * dx + dy * dy <= r * r ? Color.white : Color.clear);
+            }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

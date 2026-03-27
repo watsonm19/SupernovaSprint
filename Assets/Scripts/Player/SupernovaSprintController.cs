@@ -112,43 +112,56 @@ public class SupernovaSprintController : MonoBehaviour
 
     [Header("── Force Boost ──────────────────────────────────────────────")]
     [Tooltip("Horizontal dash speed of the Force Boost (similar to homingSpeed).")]
-    public float forceBoostSpeed = 20f;
+    public float forceBoostSpeed = 21f;
 
     [Tooltip("Upward velocity added alongside the horizontal dash for a slight lift.")]
     public float forceBoostUpForce = 8f;
 
-    [Header("── Kinetic Brake ─────────────────────────────────────────────")]
-    [Tooltip("Duration over which horizontal velocity is lerped to zero (seconds).")]
-    public float brakeDuration = 0.25f;
+    [Header("── Gravity Slam ─────────────────────────────────────────────")]
+    [Tooltip("Constant downward speed (m/s) for the duration of the slam.")]
+    public float slamSpeed = 40f;
 
-    [Tooltip("Instant downward velocity added when Kinetic Brake is triggered while airborne (m/s).")]
-    public float brakeAirDownwardKick = 4f;
+    [Tooltip("Upward bounce force on impact, as a fraction of slamSpeed (e.g. 0.6 = 60%).")]
+    [Range(0f, 1f)]
+    public float slamBounceRatio = 0.6f;
+
+    [Tooltip("Maximum upward bounce force regardless of impact speed (m/s).")]
+    public float slamMaxBounceForce = 18f;
+
+    [Tooltip("How strongly the player can steer horizontal direction mid-slam (m/s² of influence).")]
+    public float slamAirControl = 20f;
+
+    [Tooltip("Time-scale freeze duration on slam impact — the 'crunch' (seconds).")]
+    public float slamFreezeFrameDuration = 0.05f;
+
+    [Tooltip("Ground proximity distance (m) at which slam impact triggers.")]
+    public float slamGroundBuffer = 0.2f;
 
     [Header("── Nova Surge ───────────────────────────────────────────────")]
     [Tooltip("Flat top speed bonus added on top of Normal or Rocket Mode speed (m/s).")]
-    public float surgeSpeedBonus = 5f;
+    public float surgeSpeedBonus = 7.4f;
 
     [Tooltip("How much turn speed is reduced while Nova Surge is active.")]
-    public float surgeTurnSpeedReduction = 6f;
+    public float surgeTurnSpeedReduction = 9f;
 
     [Tooltip("How much brakeFriction is reduced while Nova Surge is active (less grip, more slide).")]
-    public float surgeBrakeFrictionReduction = 4f;
+    public float surgeBrakeFrictionReduction = 0.9f;
 
     [Tooltip("How much brakeFrictionAngle is raised while Nova Surge is active (wider turning arc).")]
-    public float surgeBrakeFrictionAngleBonus = 20f;
+    public float surgeBrakeFrictionAngleBonus = 45f;
 
     [Tooltip("Multiplier applied to maxLeanAngle while Nova Surge is active (e.g. 0.5 = half lean).")]
     [Range(0f, 1f)]
     public float surgeLeanMultiplier = 0.5f;
 
     [Tooltip("Instant velocity boost (m/s) added along the current travel direction on Nova Surge activation. Ignored if the player is stationary.")]
-    public float surgeActivationBoost = 5f;
+    public float surgeActivationBoost = 8.75f;
 
     [Tooltip("Acceleration bonus added while Nova Surge is active.")]
     public float surgeAccelerationBonus = 10f;
 
     [Tooltip("How long the speed boost lasts (seconds).")]
-    public float surgeDuration = 5f;
+    public float surgeDuration = 6f;
 
     [Tooltip("Cooldown before Nova Surge can be used again (seconds).")]
     public float surgeCooldown = 30f;
@@ -225,14 +238,18 @@ public class SupernovaSprintController : MonoBehaviour
     private bool forceBoostPressed;
     private bool forceBoostAvailable;
 
-    // Kinetic Brake
-    private bool      _kineticBrakePressed;
-    private bool      _isBraking;
-    private Coroutine _kineticBrakeCoroutine;
+    // Nova Surge
+    [System.NonSerialized] public bool surgeRechargeQueued; // Set when a recharge target is hit mid-surge
+
+    // Gravity Slam
+    private bool      _gravSlamPressed;
+    private Coroutine _slamCoroutine;
+    private bool      _slamHasHorizontal; // True if stick was pushed at activation
+    private Vector3   _slamHorizVel;      // Horizontal velocity locked in at activation
 
     // Nova Surge
     private bool      _novaSurgeInputPressed;
-    private bool      canSurge = true;
+    [System.NonSerialized] public bool canSurge = true;
     private Coroutine _novaSurgeCoroutine;
 
     // State
@@ -249,8 +266,10 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnHomingHit;
     [System.NonSerialized] public System.Action        OnForceBoost;
     [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
-    [System.NonSerialized] public System.Action        OnKineticBrake;
+    [System.NonSerialized] public System.Action        OnGravitySlam;        // slam activated
+    [System.NonSerialized] public System.Action        OnGravitySlamImpact;  // slam hit ground
     [System.NonSerialized] public System.Action        OnNovaSurge;
+    [System.NonSerialized] public System.Action        OnSurgeRecharged;
 
     // Nova Surge readable state — use for screen shake, motion blur, HUD, etc.
     [System.NonSerialized] public bool  isNovaSurging;
@@ -264,6 +283,9 @@ public class SupernovaSprintController : MonoBehaviour
 
     // True while Rocket Mode (Polarity toggle) is active — readable by other scripts (e.g. HUD).
     [System.NonSerialized] public bool isRocketMode;
+
+    // True while Gravity Slam is in progress — readable by VFX, HUD, etc.
+    [System.NonSerialized] public bool isSlamming;
 
     // Animator-readable state flags — written each FixedUpdate by UpdateState().
     [System.NonSerialized] public bool isGroundedPublic;
@@ -309,10 +331,21 @@ public class SupernovaSprintController : MonoBehaviour
         _baseSurfaceAlignSpeed = surfaceAlignSpeed;
     }
 
+    private void OnDisable()
+    {
+        // Clear slam state so a mid-slam death doesn't trigger a bounce on respawn.
+        if (_slamCoroutine != null)
+        {
+            StopCoroutine(_slamCoroutine);
+            _slamCoroutine = null;
+        }
+        isSlamming = false;
+    }
+
     private void FixedUpdate()
     {
-        // Runs first — may cancel homing and change state before the block below.
-        ExecuteKineticBrake();
+        // Runs first — may set isSlamming / cancel homing before the block below.
+        ExecuteGravitySlam();
         ExecuteNovaSurge();
 
         // The homing attack coroutine drives its own movement; pause everything else.
@@ -328,12 +361,12 @@ public class SupernovaSprintController : MonoBehaviour
         DetectGround();
         UpdateState();
         AlignToSurface();
-        ApplyGravity();
 
-        // Skip movement while braking — the KineticBrakeRoutine controls horizontal velocity.
-        // Gravity (ApplyGravity above) still applies so the player falls naturally.
-        if (!_isBraking)
+        // While slamming, the GravitySlamRoutine controls velocity directly each frame.
+        // Skipping gravity and movement prevents them from fighting the locked slam speed.
+        if (!isSlamming)
         {
+            ApplyGravity();
             if (state == PlayerState.Grounded)
                 GroundedMovement();
             else
@@ -421,11 +454,11 @@ public class SupernovaSprintController : MonoBehaviour
         if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
             forceBoostPressed = true;
 
-        // ── Kinetic Brake (B / East / E) ──────────────────────────────────────
+        // ── Gravity Slam (B / East / E) ───────────────────────────────────────
         if (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)
-            _kineticBrakePressed = true;
+            _gravSlamPressed = true;
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
-            _kineticBrakePressed = true;
+            _gravSlamPressed = true;
 
         // ── Nova Surge (Y / North / Tab) ──────────────────────────────────────
         if (Gamepad.current  != null && Gamepad.current.buttonNorth.wasPressedThisFrame)
@@ -846,67 +879,104 @@ public class SupernovaSprintController : MonoBehaviour
 
     #endregion
     // ─────────────────────────────────────────────────────────────────────────
-    #region Kinetic Brake
+    #region Gravity Slam
 
-    private void ExecuteKineticBrake()
+    private void ExecuteGravitySlam()
     {
-        if (!_kineticBrakePressed) return;
-        _kineticBrakePressed = false;
-        if (_isBraking) return;
+        if (!_gravSlamPressed) return;
+        _gravSlamPressed = false;
+        if (isSlamming) return;
+        if (state == PlayerState.Grounded) return; // Airborne only
 
-        // Force out of Rocket Mode
-        if (isRocketMode)
-        {
-            isRocketMode = false;
-            ApplyPolarityMode();
-            OnRocketToggle?.Invoke(false);
-        }
-
-        // Cancel any active homing attack — allows a clean vertical drop
+        // Interrupt homing attack
         if (state == PlayerState.HomingAttack && _activeHomingCoroutine != null)
         {
             StopCoroutine(_activeHomingCoroutine);
             _activeHomingCoroutine = null;
-            state = PlayerState.Airborne;
+            isHomingPublic         = false;
+            state                  = PlayerState.Airborne;
         }
 
-        // If airborne, kick the player downward so the brake also drives them toward the ground
-        if (state != PlayerState.Grounded)
-        {
-            Vector3 v = rb.linearVelocity;
-            rb.linearVelocity = new Vector3(v.x, Mathf.Min(v.y, -brakeAirDownwardKick), v.z);
-        }
+        // Cancel jump hold so variable-height doesn't fight the slam
+        isJumping = false;
 
-        _kineticBrakeCoroutine = StartCoroutine(KineticBrakeRoutine());
-        OnKineticBrake?.Invoke();
+        // Capture stick intent at the moment of press
+        _slamHasHorizontal = moveInput.sqrMagnitude > 0.1f;
+        _slamHorizVel      = _slamHasHorizontal
+            ? Vector3.ProjectOnPlane(rb.linearVelocity, transform.up)
+            : Vector3.zero;
+
+        _slamCoroutine = StartCoroutine(GravitySlamRoutine());
+        OnGravitySlam?.Invoke();
     }
 
-    private IEnumerator KineticBrakeRoutine()
+    private IEnumerator GravitySlamRoutine()
     {
-        _isBraking = true;
-        float elapsed = 0f;
+        isSlamming = true;
 
-        while (elapsed < brakeDuration)
+        while (true)
         {
-            // Interrupt if jump is usable, or force boost is available and pressed
-            bool jumpInterrupts  = jumpBufferTimer > 0f && (isGrounded || homingAvailable);
-            bool boostInterrupts = forceBoostPressed && forceBoostAvailable;
+            // ── Cancel into Force Boost ────────────────────────────────────────
+            if (forceBoostPressed && forceBoostAvailable)
+            {
+                isSlamming     = false;
+                _slamCoroutine = null;
+                HandleForceBoost();
+                yield break;
+            }
 
-            if (jumpInterrupts || boostInterrupts)
-                break;
+            // ── Cancel into Homing Attack / Jump ──────────────────────────────
+            if (jumpBufferTimer > 0f && homingAvailable)
+            {
+                isSlamming     = false;
+                _slamCoroutine = null;
+                yield break; // jumpBufferTimer still live — HandleHomingAttack fires next frame
+            }
 
-            // Lerp horizontal (X/Z) toward zero — Y is untouched so gravity is unaffected
-            float   t     = elapsed / brakeDuration;
-            Vector3 vel   = rb.linearVelocity;
-            Vector3 horiz = Vector3.Lerp(new Vector3(vel.x, 0f, vel.z), Vector3.zero, t);
-            rb.linearVelocity = new Vector3(horiz.x, vel.y, horiz.z);
+            // ── Steer horizontal component with stick, then lock downward speed ──
+            if (cameraTransform != null && moveInput.sqrMagnitude > 0.1f)
+            {
+                Vector3 camFwd   = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+                Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right,   Vector3.up).normalized;
+                Vector3 inputDir = (camFwd * moveInput.y + camRight * moveInput.x).normalized;
+                _slamHorizVel += inputDir * slamAirControl * Time.fixedDeltaTime;
+            }
+            rb.linearVelocity = _slamHorizVel - transform.up * slamSpeed;
 
-            elapsed += Time.fixedDeltaTime;
+            // ── Ground proximity check ─────────────────────────────────────────
+            //  Uses the same origin/radius as DetectGround so results are consistent.
+            const float originBias = 0.1f;
+            Vector3     castOrigin = transform.position + transform.up * (groundCheckRadius + originBias);
+            bool nearGround = Physics.SphereCast(
+                castOrigin, groundCheckRadius, -transform.up,
+                out RaycastHit _, slamGroundBuffer + originBias,
+                groundLayers, QueryTriggerInteraction.Ignore);
+
+            if (nearGround || isGrounded)
+            {
+                // ── Impact ────────────────────────────────────────────────────
+                Time.timeScale = 0f;
+                yield return new WaitForSecondsRealtime(slamFreezeFrameDuration);
+                Time.timeScale = 1f;
+
+                float bounceForce = Mathf.Min(slamSpeed * slamBounceRatio, slamMaxBounceForce);
+
+                // Bounce continues the horizontal momentum locked in at activation.
+                // If stick was neutral (straight down), bounce goes straight up.
+                rb.linearVelocity = _slamHorizVel + transform.up * bounceForce;
+
+                forceBoostAvailable = true;  // Player can dash out of the bounce
+                homingAvailable     = true;
+                isSlamming          = false;
+                state               = PlayerState.Airborne;
+                _slamCoroutine      = null;
+
+                OnGravitySlamImpact?.Invoke();
+                yield break;
+            }
+
             yield return new WaitForFixedUpdate();
         }
-
-        _isBraking             = false;
-        _kineticBrakeCoroutine = null;
     }
 
     #endregion
@@ -956,16 +1026,21 @@ public class SupernovaSprintController : MonoBehaviour
         forceBoostAvailable = true;
     }
 
-    // Called externally (e.g. by a recharge homing target) to instantly reset the cooldown.
-    // Does nothing if Nova Surge is currently active.
+    // Called externally (e.g. by a recharge homing target) to reset the cooldown.
+    // If Nova Surge is currently active, queues the recharge so cooldown is skipped when it ends.
     public void RechargeSurge()
     {
-        if (isNovaSurging) return;
+        if (isNovaSurging)
+        {
+            surgeRechargeQueued = true;
+            return;
+        }
         if (_novaSurgeCoroutine != null)
             StopCoroutine(_novaSurgeCoroutine);
         _novaSurgeCoroutine    = null;
         surgeCooldownRemaining = 0f;
         canSurge               = true;
+        OnSurgeRecharged?.Invoke();
     }
 
     private IEnumerator NovaSurgeRoutine()
@@ -986,7 +1061,7 @@ public class SupernovaSprintController : MonoBehaviour
         OnNovaSurge?.Invoke();
 
         // ── Active window ─────────────────────────────────────────────────────
-        //  Ticks every frame. Exits early if Kinetic Brake sets isNovaSurging = false.
+        //  Ticks every frame. Exits early if isNovaSurging is set to false externally.
         float elapsed = 0f;
         while (elapsed < surgeDuration && isNovaSurging)
         {
@@ -1002,16 +1077,24 @@ public class SupernovaSprintController : MonoBehaviour
         brakeFriction      += surgeBrakeFrictionReduction;
         brakeFrictionAngle -= surgeBrakeFrictionAngleBonus;
 
-        // ── Cooldown ──────────────────────────────────────────────────────────
-        surgeCooldownRemaining = surgeCooldown;
-        while (surgeCooldownRemaining > 0f)
+        // ── Cooldown (skipped if a recharge was queued mid-surge) ────────────
+        if (surgeRechargeQueued)
         {
-            surgeCooldownRemaining -= Time.deltaTime;
-            yield return null;
+            surgeRechargeQueued = false;
+        }
+        else
+        {
+            surgeCooldownRemaining = surgeCooldown;
+            while (surgeCooldownRemaining > 0f)
+            {
+                surgeCooldownRemaining -= Time.deltaTime;
+                yield return null;
+            }
         }
 
         surgeCooldownRemaining = 0f;
         canSurge               = true;
+        OnSurgeRecharged?.Invoke();
         _novaSurgeCoroutine    = null;
     }
 

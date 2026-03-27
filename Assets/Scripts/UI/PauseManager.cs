@@ -366,7 +366,7 @@ public class PauseManager : MonoBehaviour
             ("Jump",                  "A  /  Space"),
             ("Homing Attack",         "A  /  Space  (while airborne)"),
             ("Force Boost",           "X  /  Q  (while airborne)"),
-            ("Kinetic Brake",         "B  /  E"),
+            ("Gravity Slam",          "B  /  E  (while airborne)"),
             ("Toggle Rocket Mode",    "LB or RB  /  Shift"),
             ("Nova Surge",            "Y  /  Tab  (Rocket Mode only)"),
             ("Return to Checkpoint",  "Select  /  Backspace"),

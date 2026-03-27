@@ -19,7 +19,7 @@ public class Earthquake : MonoBehaviour
     public float interval  = 23f;
 
     public AudioClip earthquakeClip;
-    public float earthquakeVolume = 1.45f;
+    public float earthquakeVolume = 1.37f;
 
     private AudioSource _audio;
 

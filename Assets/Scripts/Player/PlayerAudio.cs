@@ -22,7 +22,8 @@ public class PlayerAudio : MonoBehaviour
     public AudioClip rocketToggleOff;
     public AudioClip thruster;
     public AudioClip forceBoost;
-    public AudioClip kineticBrake;
+    public AudioClip gravitySlam;
+    public AudioClip gravitySlamImpact;
     public AudioClip novaSurgeActivate;
     public AudioClip novaSurgeRecharged;
 
@@ -39,7 +40,8 @@ public class PlayerAudio : MonoBehaviour
     public float homingAttackVolume = 1f;
     public float homingHitVolume    = 1f;
     public float forceBoostVolume   = 1f;
-    public float kineticBrakeVolume    = 1f;
+    public float gravitySlamVolume  = 1f;
+    public float gravitySlamImpactVolume = 1f;
     public float novaSurgeActivateVolume  = 1f;
     public float novaSurgeRechargedVolume = 1f;
     public float thrusterVolume     = 0.5f;
@@ -51,7 +53,6 @@ public class PlayerAudio : MonoBehaviour
     private AudioSource _sfx;
     private AudioSource _thrusterSource;
     private float       _footstepTimer;
-    private bool        _wasOnCooldown;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -82,10 +83,12 @@ public class PlayerAudio : MonoBehaviour
         controller.OnLand         += PlayLand;
         controller.OnHomingAttack += PlayHomingAttack;
         controller.OnHomingHit    += PlayHomingHit;
-        controller.OnForceBoost   += PlayForceBoost;
-        controller.OnKineticBrake += PlayKineticBrake;
-        controller.OnRocketToggle += PlayRocketToggle;
-        controller.OnNovaSurge    += PlayNovaSurgeActivate;
+        controller.OnForceBoost        += PlayForceBoost;
+        controller.OnGravitySlam       += PlayGravitySlam;
+        controller.OnGravitySlamImpact += PlayGravitySlamImpact;
+        controller.OnRocketToggle      += PlayRocketToggle;
+        controller.OnNovaSurge      += PlayNovaSurgeActivate;
+        controller.OnSurgeRecharged += PlayNovaSurgeRecharged;
     }
 
     private void OnDisable()
@@ -95,10 +98,12 @@ public class PlayerAudio : MonoBehaviour
         controller.OnLand         -= PlayLand;
         controller.OnHomingAttack -= PlayHomingAttack;
         controller.OnHomingHit    -= PlayHomingHit;
-        controller.OnForceBoost   -= PlayForceBoost;
-        controller.OnKineticBrake -= PlayKineticBrake;
-        controller.OnRocketToggle -= PlayRocketToggle;
-        controller.OnNovaSurge    -= PlayNovaSurgeActivate;
+        controller.OnForceBoost        -= PlayForceBoost;
+        controller.OnGravitySlam       -= PlayGravitySlam;
+        controller.OnGravitySlamImpact -= PlayGravitySlamImpact;
+        controller.OnRocketToggle      -= PlayRocketToggle;
+        controller.OnNovaSurge      -= PlayNovaSurgeActivate;
+        controller.OnSurgeRecharged -= PlayNovaSurgeRecharged;
     }
 
     private void Update()
@@ -106,7 +111,6 @@ public class PlayerAudio : MonoBehaviour
         if (controller == null) return;
         HandleFootsteps();
         HandleThruster();
-        HandleSurgeRecharged();
     }
 
     // ── Footsteps ─────────────────────────────────────────────────────────────
@@ -151,17 +155,11 @@ public class PlayerAudio : MonoBehaviour
     private void PlayHomingAttack()          => Play(homingAttack, homingAttackVolume);
     private void PlayHomingHit()             => Play(homingHit, homingHitVolume);
     private void PlayForceBoost()            => Play(forceBoost, forceBoostVolume);
-    private void PlayKineticBrake()          => Play(kineticBrake, kineticBrakeVolume);
+    private void PlayGravitySlam()           => Play(gravitySlam,       gravitySlamVolume);
+    private void PlayGravitySlamImpact()     => Play(gravitySlamImpact, gravitySlamImpactVolume);
     private void PlayRocketToggle(bool on)    => Play(on ? rocketToggleOn : rocketToggleOff);
     private void PlayNovaSurgeActivate()      => Play(novaSurgeActivate, novaSurgeActivateVolume);
-
-    private void HandleSurgeRecharged()
-    {
-        bool onCooldown = controller.surgeCooldownRemaining > 0f;
-        if (_wasOnCooldown && !onCooldown)
-            Play(novaSurgeRecharged, novaSurgeRechargedVolume);
-        _wasOnCooldown = onCooldown;
-    }
+    private void PlayNovaSurgeRecharged()     => Play(novaSurgeRecharged, novaSurgeRechargedVolume);
 
     // ── Helper ────────────────────────────────────────────────────────────────
 

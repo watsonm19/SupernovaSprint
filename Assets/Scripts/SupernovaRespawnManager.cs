@@ -88,11 +88,12 @@ public class SupernovaRespawnManager : MonoBehaviour
 
     // ── Private state ─────────────────────────────────────────────────────────
 
-    private Vector3    _spawnPosition;
-    private Quaternion _spawnRotation;
-    private Rigidbody  _rb;
-    private bool       _isRespawning;
-    private AudioSource _audio;
+    private Vector3        _spawnPosition;
+    private Quaternion     _spawnRotation;
+    private Rigidbody      _rb;
+    private bool           _isRespawning;
+    private AudioSource    _audio;
+    private GravitySlamVFX _slamVFX;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ public class SupernovaRespawnManager : MonoBehaviour
         _spawnPosition = playerController.transform.position;
         _spawnRotation = playerController.transform.rotation;
         _rb            = playerController.GetComponent<Rigidbody>();
+        _slamVFX       = playerController.GetComponent<GravitySlamVFX>();
     }
 
     // ── Fall death ────────────────────────────────────────────────────────────
@@ -212,6 +214,7 @@ public class SupernovaRespawnManager : MonoBehaviour
 
         // Freeze player
         if (playerController != null) playerController.enabled = false;
+        if (_slamVFX != null)         _slamVFX.enabled         = false;
         if (_rb != null)
         {
             _rb.linearVelocity  = Vector3.zero;
@@ -237,6 +240,7 @@ public class SupernovaRespawnManager : MonoBehaviour
 
         // Re-enable player — timer keeps running untouched
         if (playerController != null) playerController.enabled = true;
+        if (_slamVFX != null)         _slamVFX.enabled         = true;
 
         // Particles + fade back in
         respawnVFX?.Play();

@@ -126,10 +126,10 @@ public static class SceneBootstrapper
                     polarityVFX.novaMaterial = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(novaMatGuids[0]));
             }
 
-            // Add KineticBrakeVFX if not already on the player
-            var kineticBrakeVFX = player.GetComponent<KineticBrakeVFX>()
-                                ?? player.AddComponent<KineticBrakeVFX>();
-            kineticBrakeVFX.controller = player.GetComponent<SupernovaSprintController>();
+            // Add GravitySlamVFX if not already on the player
+            var gravitySlamVFX = player.GetComponent<GravitySlamVFX>()
+                               ?? player.AddComponent<GravitySlamVFX>();
+            gravitySlamVFX.controller = player.GetComponent<SupernovaSprintController>();
 
             // ── Camera ────────────────────────────────────────────────────────
             GameObject camGO = SetupCamera(root.transform, player.transform, groundLayer);
@@ -225,7 +225,7 @@ public static class SceneBootstrapper
             var eqGO = new GameObject("Earthquake");
             eqGO.transform.SetParent(root.transform, false);
             var eq = eqGO.AddComponent<Earthquake>();
-            eq.earthquakeVolume = 1.45f;
+            eq.earthquakeVolume = 1.37f;
             var eqGuids = AssetDatabase.FindAssets("earthquake t:AudioClip", new[] { "Assets/Audio/SFX" });
             if (eqGuids.Length > 0)
                 eq.earthquakeClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(eqGuids[0]));
