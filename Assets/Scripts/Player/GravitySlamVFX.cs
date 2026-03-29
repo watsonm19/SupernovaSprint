@@ -75,8 +75,9 @@ public class GravitySlamVFX : MonoBehaviour
     {
         if (controller != null)
         {
-            controller.OnGravitySlam       += TriggerActivationVFX;
-            controller.OnGravitySlamImpact += TriggerImpactVFX;
+            controller.OnGravitySlam          += TriggerActivationVFX;
+            controller.OnGravitySlamImpact    += TriggerImpactVFX;
+            controller.OnGravitySlamCancelled += TriggerCancelVFX;
         }
     }
 
@@ -84,8 +85,9 @@ public class GravitySlamVFX : MonoBehaviour
     {
         if (controller != null)
         {
-            controller.OnGravitySlam       -= TriggerActivationVFX;
-            controller.OnGravitySlamImpact -= TriggerImpactVFX;
+            controller.OnGravitySlam          -= TriggerActivationVFX;
+            controller.OnGravitySlamImpact    -= TriggerImpactVFX;
+            controller.OnGravitySlamCancelled -= TriggerCancelVFX;
         }
 
         if (_activationCoroutine != null)
@@ -103,6 +105,16 @@ public class GravitySlamVFX : MonoBehaviour
     }
 
     // ── VFX ───────────────────────────────────────────────────────────────────
+
+    private void TriggerCancelVFX()
+    {
+        if (_activationCoroutine != null)
+        {
+            StopCoroutine(_activationCoroutine);
+            _activationCoroutine = null;
+        }
+        CleanupAll();
+    }
 
     private void TriggerActivationVFX()
     {

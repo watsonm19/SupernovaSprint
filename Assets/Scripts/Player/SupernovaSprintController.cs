@@ -266,8 +266,9 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnHomingHit;
     [System.NonSerialized] public System.Action        OnForceBoost;
     [System.NonSerialized] public System.Action<bool>  OnRocketToggle; // true = rocket on
-    [System.NonSerialized] public System.Action        OnGravitySlam;        // slam activated
-    [System.NonSerialized] public System.Action        OnGravitySlamImpact;  // slam hit ground
+    [System.NonSerialized] public System.Action        OnGravitySlam;          // slam activated
+    [System.NonSerialized] public System.Action        OnGravitySlamImpact;    // slam hit ground
+    [System.NonSerialized] public System.Action        OnGravitySlamCancelled; // slam cancelled mid-air
     [System.NonSerialized] public System.Action        OnNovaSurge;
     [System.NonSerialized] public System.Action        OnSurgeRecharged;
 
@@ -921,6 +922,7 @@ public class SupernovaSprintController : MonoBehaviour
             {
                 isSlamming     = false;
                 _slamCoroutine = null;
+                OnGravitySlamCancelled?.Invoke();
                 HandleForceBoost();
                 yield break;
             }
@@ -930,6 +932,7 @@ public class SupernovaSprintController : MonoBehaviour
             {
                 isSlamming     = false;
                 _slamCoroutine = null;
+                OnGravitySlamCancelled?.Invoke();
                 yield break; // jumpBufferTimer still live — HandleHomingAttack fires next frame
             }
 
