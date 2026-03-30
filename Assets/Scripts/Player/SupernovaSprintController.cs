@@ -88,6 +88,12 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Speed at which the player's transform.up aligns to the surface normal.")]
     public float surfaceAlignSpeed = 12f;
 
+    [Tooltip("Minimum dot product between the hit surface normal and transform.up for it to count as ground.\n" +
+             "Rejects undersides of flat tracks (dot ≈ −1) while still accepting loop interiors (dot ≈ +1).\n" +
+             "0.1 = only surfaces roughly facing the player's feet. Lower values allow steeper overhangs.")]
+    [Range(-1f, 1f)]
+    public float minGroundNormalAlignment = 0.1f;
+
     [Tooltip("Layers treated as ground. IMPORTANT: exclude the Player layer to avoid self-hits.")]
     public LayerMask groundLayers = ~0;
 
@@ -103,12 +109,18 @@ public class SupernovaSprintController : MonoBehaviour
     public float rollingFriction = 0.5f;
 
     [Header("── Air Control ───────────────────────────────────────────────")]
-    [Tooltip("Fraction of 'acceleration' available in the air for strafing. SA2 feel: 0.25.")]
+    [Tooltip("Base air control force as a fraction of acceleration. Higher = more responsive in air.")]
     [Range(0f, 1f)]
-    public float airControlFactor = 0.25f;
+    public float airControlFactor = 0.5f;
 
-    [Tooltip("Horizontal speed cap while airborne (separate from topSpeed).")]
+    [Tooltip("Horizontal speed at which air control reaches zero. Control tapers smoothly toward this value.")]
     public float maxAirStrafeSpeed = 20f;
+
+    [Tooltip("Curve shape of the speed-based air control falloff.\n" +
+             "1 = linear drop  |  2 = holds well at mid-speed then tapers sharply at high speed (recommended)\n" +
+             "Higher values = more control at low speed, heavier feeling at high speed.")]
+    [Range(0.5f, 4f)]
+    public float airControlFalloffExponent = 2f;
 
     [Header("── Force Boost ──────────────────────────────────────────────")]
     [Tooltip("Horizontal dash speed of the Force Boost (similar to homingSpeed).")]
@@ -121,12 +133,16 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("Constant downward speed (m/s) for the duration of the slam.")]
     public float slamSpeed = 40f;
 
-    [Tooltip("Upward bounce force on impact, as a fraction of slamSpeed (e.g. 0.6 = 60%).")]
+    [Tooltip("Scales the freefall-equivalent bounce velocity. 1.0 = bounce as high as you fell, <1.0 = lower.")]
     [Range(0f, 1f)]
     public float slamBounceRatio = 0.6f;
 
-    [Tooltip("Maximum upward bounce force regardless of impact speed (m/s).")]
-    public float slamMaxBounceForce = 18f;
+    [Tooltip("Minimum upward bounce force regardless of fall distance (m/s). √(2 × gravity × height) = velocity.\n" +
+             "4 players (4.76 m) → 15.43  |  Set to 0 to disable.")]
+    public float slamMinBounceForce = 15.43f;
+
+    [Tooltip("Maximum upward bounce force regardless of fall distance (m/s).")]
+    public float slamMaxBounceForce = 18.9f;
 
     [Tooltip("How strongly the player can steer horizontal direction mid-slam (m/s² of influence).")]
     public float slamAirControl = 20f;
@@ -149,6 +165,11 @@ public class SupernovaSprintController : MonoBehaviour
 
     [Tooltip("How much brakeFrictionAngle is raised while Nova Surge is active (wider turning arc).")]
     public float surgeBrakeFrictionAngleBonus = 45f;
+
+    [Tooltip("How much rollingFriction is reduced while Nova Surge is active.\n" +
+             "rollingFriction ÷ (rollingFriction − reduction) scales the coast-to-stop time.\n" +
+             "e.g. rocketRollingFriction 25 − 6 = 19 → 57.4 ÷ 19 ≈ 3 s to stop.")]
+    public float surgeRollingFrictionReduction = 6f;
 
     [Tooltip("Multiplier applied to maxLeanAngle while Nova Surge is active (e.g. 0.5 = half lean).")]
     [Range(0f, 1f)]
@@ -246,6 +267,7 @@ public class SupernovaSprintController : MonoBehaviour
     private Coroutine _slamCoroutine;
     private bool      _slamHasHorizontal; // True if stick was pushed at activation
     private Vector3   _slamHorizVel;      // Horizontal velocity locked in at activation
+    private float     _slamStartY;        // World-space Y at slam activation — used to measure fall distance
 
     // Nova Surge
     private bool      _novaSurgeInputPressed;
@@ -551,6 +573,13 @@ public class SupernovaSprintController : MonoBehaviour
             groundLayers,
             QueryTriggerInteraction.Ignore);
 
+        // Reject surfaces whose normal doesn't sufficiently face the player's feet.
+        // dot(hit.normal, transform.up) ≈ +1 = floor/loop interior (accept)
+        //                               ≈  0 = side wall (reject)
+        //                               ≈ −1 = underside (reject)
+        if (isGrounded && Vector3.Dot(hit.normal, transform.up) < minGroundNormalAlignment)
+            isGrounded = false;
+
         if (isGrounded)
         {
             // ── Surface Normal ────────────────────────────────────────────────
@@ -832,10 +861,13 @@ public class SupernovaSprintController : MonoBehaviour
         Vector3 camRight   = Vector3.ProjectOnPlane(cameraTransform.right,   Vector3.up).normalized;
         Vector3 inputDir   = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
-        // Only apply strafe if we haven't hit the air strafe cap
-        Vector3 horizontalVel = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
-        if (horizontalVel.magnitude < maxAirStrafeSpeed)
-            rb.AddForce(inputDir * acceleration * airControlFactor, ForceMode.Acceleration);
+        // Air control tapers with speed — faster = less ability to drift.
+        // t = 0 (still) → full airControlFactor.  t = 1 (maxAirStrafeSpeed) → zero control.
+        // 1 − t^exponent: holds strong at low/mid speed, drops off sharply near the cap.
+        Vector3 horizontalVel    = Vector3.ProjectOnPlane(rb.linearVelocity, Vector3.up);
+        float   t                = Mathf.Clamp01(horizontalVel.magnitude / maxAirStrafeSpeed);
+        float   controlMult      = 1f - Mathf.Pow(t, airControlFalloffExponent);
+        rb.AddForce(inputDir * acceleration * airControlFactor * controlMult, ForceMode.Acceleration);
     }
 
     private void HandleForceBoost()
@@ -901,6 +933,9 @@ public class SupernovaSprintController : MonoBehaviour
         // Cancel jump hold so variable-height doesn't fight the slam
         isJumping = false;
 
+        // Record Y position so fall distance can be measured at impact
+        _slamStartY = transform.position.y;
+
         // Capture stick intent at the moment of press
         _slamHasHorizontal = moveInput.sqrMagnitude > 0.1f;
         _slamHorizVel      = _slamHasHorizontal
@@ -962,7 +997,14 @@ public class SupernovaSprintController : MonoBehaviour
                 yield return new WaitForSecondsRealtime(slamFreezeFrameDuration);
                 Time.timeScale = 1f;
 
-                float bounceForce = Mathf.Min(slamSpeed * slamBounceRatio, slamMaxBounceForce);
+                // Scale bounce off actual fall distance — deeper slams bounce higher.
+                // Uses freefall physics (√(2g × d)) as the base so the bounce feels
+                // proportional to the drop, then slamBounceRatio dials it back.
+                float fallDistance = Mathf.Max(0f, _slamStartY - transform.position.y);
+                float bounceForce  = Mathf.Clamp(
+                    Mathf.Sqrt(2f * gravityForce * fallDistance) * slamBounceRatio,
+                    slamMinBounceForce,
+                    slamMaxBounceForce);
 
                 // Bounce continues the horizontal momentum locked in at activation.
                 // If stick was neutral (straight down), bounce goes straight up.
@@ -1006,6 +1048,7 @@ public class SupernovaSprintController : MonoBehaviour
         isNovaSurging      = false;
         turnSpeed         += surgeTurnSpeedReduction;
         brakeFrictionAngle -= surgeBrakeFrictionAngleBonus;
+        rollingFriction   += surgeRollingFrictionReduction;
         // topSpeed, acceleration, brakeFriction are restored by the ApplyPolarityMode call that follows
         _novaSurgeCoroutine = StartCoroutine(NovaSurgeCooldownOnly());
     }
@@ -1056,6 +1099,7 @@ public class SupernovaSprintController : MonoBehaviour
         turnSpeed         -= surgeTurnSpeedReduction;
         brakeFriction     -= surgeBrakeFrictionReduction;
         brakeFrictionAngle += surgeBrakeFrictionAngleBonus;
+        rollingFriction   -= surgeRollingFrictionReduction;
 
         // Instant velocity kick along current travel direction (ignored if stationary)
         if (surgeActivationBoost > 0f && rb.linearVelocity.sqrMagnitude > 0.1f)
@@ -1079,6 +1123,7 @@ public class SupernovaSprintController : MonoBehaviour
         turnSpeed          += surgeTurnSpeedReduction;
         brakeFriction      += surgeBrakeFrictionReduction;
         brakeFrictionAngle -= surgeBrakeFrictionAngleBonus;
+        rollingFriction    += surgeRollingFrictionReduction;
 
         // ── Cooldown (skipped if a recharge was queued mid-surge) ────────────
         if (surgeRechargeQueued)

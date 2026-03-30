@@ -113,17 +113,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SupernovaSprintController
   topSpeed: 25
-  acceleration: 35
+  acceleration: 62.5
   slopeForce: 40
-  turnSpeed: 12
-  jumpForce: 15
-  jumpHoldForce: 8
+  turnSpeed: 10
+  jumpForce: 13.36
+  jumpHoldForce: 22.7
   jumpHoldTime: 0.2
   coyoteTime: 0.12
   jumpBufferTime: 0.15
   homingRange: 15
   homingSpeed: 40
-  homingBounceForce: 12
+  homingBounceForce: 11.565
   homingFreezeFrameDuration: 0.05
   homingDashDuration: 0.35
   gravityForce: 25
@@ -131,40 +131,44 @@ MonoBehaviour:
   groundCheckRadius: 0.4
   groundCheckDistance: 1.1
   surfaceAlignSpeed: 12
+  minGroundNormalAlignment: 0.1
   groundLayers:
     serializedVersion: 2
     m_Bits: 256
-  brakeFriction: 10
+  brakeFriction: 25
   brakeFrictionAngle: 45
-  rollingFriction: 0.5
-  airControlFactor: 0.25
-  maxAirStrafeSpeed: 20
-  forceBoostSpeed: 21
-  forceBoostUpForce: 8
+  rollingFriction: 125
+  airControlFactor: 0.5
+  maxAirStrafeSpeed: 80
+  airControlFalloffExponent: 0.5
+  forceBoostSpeed: 10
+  forceBoostUpForce: 7.71
   slamSpeed: 35
-  slamBounceRatio: 0.65
-  slamMaxBounceForce: 18
+  slamBounceRatio: 0.837
+  slamMinBounceForce: 18.09
+  slamMaxBounceForce: 20.41
   slamAirControl: 50
   slamFreezeFrameDuration: 0.05
   slamGroundBuffer: 0.2
-  surgeSpeedBonus: 7.4
-  surgeTurnSpeedReduction: 8
-  surgeBrakeFrictionReduction: 0.9
+  surgeSpeedBonus: 10.2
+  surgeTurnSpeedReduction: 6
+  surgeBrakeFrictionReduction: 5
   surgeBrakeFrictionAngleBonus: 45
+  surgeRollingFrictionReduction: 25
   surgeLeanMultiplier: 0.5
-  surgeActivationBoost: 8.75
-  surgeAccelerationBonus: 10
+  surgeActivationBoost: 10
+  surgeAccelerationBonus: -12.5
   surgeDuration: 6
   surgeCooldown: 30
   visualModel: {fileID: 971701413174335510}
-  maxLeanAngle: 25
-  leanSpeed: 8
+  maxLeanAngle: 15
+  leanSpeed: 5
   cameraTransform: {fileID: 0}
   rocketTopSpeed: 50
-  rocketAcceleration: 70
-  rocketBrakeFriction: 1
-  rocketRollingFriction: 0.1
-  rocketGroundStickyForce: 5
+  rocketAcceleration: 62.5
+  rocketBrakeFriction: 10
+  rocketRollingFriction: 125
+  rocketGroundStickyForce: 7.5
   rocketSurfaceAlignSpeed: 3
   normalFOV: 60
   rocketFOV: 75
