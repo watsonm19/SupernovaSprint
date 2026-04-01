@@ -291,9 +291,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForceBoostVFX
   controller: {fileID: 7168267401702996782}
-  ringMaterial: {fileID: 2100000, guid: 65b511f422652e84181275c943579573, type: 2}
-  ringColor: {r: 0, g: 1, b: 1, a: 1}
-  lineWidth: 0.05
+  ringMaterial: {fileID: 2100000, guid: af4adbb542ebbb0428dad5be2c18dbaa, type: 2}
+  ringColor: {r: 0.4, g: 0, b: 1, a: 1}
+  lineWidth: 0.075
   segments: 6
   startRadiusTop: 0.5
   endRadiusTop: 1
