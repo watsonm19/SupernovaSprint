@@ -122,7 +122,7 @@ MonoBehaviour:
   jumpHoldTime: 0.2
   coyoteTime: 0.12
   jumpBufferTime: 0.15
-  homingRange: 15
+  homingRange: 16.66
   homingSpeed: 40
   homingBounceForce: 13.36
   homingFreezeFrameDuration: 0.05
@@ -342,8 +342,8 @@ MonoBehaviour:
   noBlurBelow: 20
   lowBlurStart: 21
   highBlurAbove: 75
-  lowIntensity: 0.1
-  highIntensity: 0.25
+  lowIntensity: 0.05
+  highIntensity: 0.2
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0
