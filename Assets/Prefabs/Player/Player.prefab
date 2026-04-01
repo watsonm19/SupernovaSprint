@@ -146,9 +146,7 @@ MonoBehaviour:
   forceBoostUpForce: 10.91
   slamSpeed: 35
   slamAcceleration: 5
-  slamBounceRatio: 0.671
-  slamMinBounceForce: 20.41
-  slamMaxBounceForce: 23.14
+  slamBounceForce: 20.41
   slamAirControl: 50
   slamFreezeFrameDuration: 0.05
   slamGroundBuffer: 0.2
@@ -157,7 +155,7 @@ MonoBehaviour:
   surgeTurnSpeedReduction: 4
   surgeBrakeFrictionReduction: 5
   surgeBrakeFrictionAngleBonus: 45
-  surgeRollingFrictionReduction: 25
+  surgeRollingFrictionReduction: 49.75
   surgeLeanMultiplier: 0.5
   surgeActivationBoost: 10
   surgeAccelerationBonus: -12.5

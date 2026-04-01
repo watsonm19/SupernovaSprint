@@ -136,16 +136,9 @@ public class SupernovaSprintController : MonoBehaviour
     [Tooltip("How quickly the downward slam speed increases per second (m/s²). Keep small for a subtle effect.")]
     public float slamAcceleration = 5f;
 
-    [Tooltip("Scales the freefall-equivalent bounce velocity. 1.0 = bounce as high as you fell, <1.0 = lower.")]
-    [Range(0f, 1f)]
-    public float slamBounceRatio = 0.6f;
-
-    [Tooltip("Minimum upward bounce force regardless of fall distance (m/s). √(2 × gravity × height) = velocity.\n" +
-             "4 players (4.76 m) → 15.43  |  Set to 0 to disable.")]
-    public float slamMinBounceForce = 15.43f;
-
-    [Tooltip("Maximum upward bounce force regardless of fall distance (m/s).")]
-    public float slamMaxBounceForce = 18.9f;
+    [Tooltip("Upward bounce force on slam impact (m/s). √(2 × gravity × height) = velocity.\n" +
+             "3.5 players (8.33 m) → 20.41  |  4.5 players (10.71 m) → 23.14")]
+    public float slamBounceForce = 20.41f;
 
     [Tooltip("How strongly the player can steer horizontal direction mid-slam (m/s² of influence).")]
     public float slamAirControl = 20f;
@@ -274,7 +267,6 @@ public class SupernovaSprintController : MonoBehaviour
     private Coroutine _slamCoroutine;
     private bool      _slamHasHorizontal; // True if stick was pushed at activation
     private Vector3   _slamHorizVel;      // Horizontal velocity locked in at activation
-    private float     _slamStartY;        // World-space Y at slam activation — used to measure fall distance
     private float     _slamCooldownTimer;
 
     // Nova Surge
@@ -971,9 +963,6 @@ public class SupernovaSprintController : MonoBehaviour
         // Cancel jump hold so variable-height doesn't fight the slam
         isJumping = false;
 
-        // Record Y position so fall distance can be measured at impact
-        _slamStartY = transform.position.y;
-
         // Capture stick intent at the moment of press
         _slamHasHorizontal = moveInput.sqrMagnitude > 0.1f;
         _slamHorizVel      = _slamHasHorizontal
@@ -1039,14 +1028,7 @@ public class SupernovaSprintController : MonoBehaviour
                 yield return new WaitForSecondsRealtime(slamFreezeFrameDuration);
                 Time.timeScale = 1f;
 
-                // Scale bounce off actual fall distance — deeper slams bounce higher.
-                // Uses freefall physics (√(2g × d)) as the base so the bounce feels
-                // proportional to the drop, then slamBounceRatio dials it back.
-                float fallDistance = Mathf.Max(0f, _slamStartY - transform.position.y);
-                float bounceForce  = Mathf.Clamp(
-                    Mathf.Sqrt(2f * gravityForce * fallDistance) * slamBounceRatio,
-                    slamMinBounceForce,
-                    slamMaxBounceForce);
+                float bounceForce = slamBounceForce;
 
                 // Bounce continues the horizontal momentum locked in at activation.
                 // If stick was neutral (straight down), bounce goes straight up.
