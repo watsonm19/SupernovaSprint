@@ -140,7 +140,7 @@ MonoBehaviour:
   brakeFrictionAngle: 45
   rollingFriction: 125
   airControlFactor: 0.5
-  maxAirStrafeSpeed: 80
+  maxAirStrafeSpeed: 85
   airControlFalloffExponent: 0.5
   forceBoostSpeed: 10
   forceBoostUpForce: 10.91
