@@ -63,8 +63,8 @@ public static class AstronautAnimatorBuilder
         var sm = controller.layers[0].stateMachine;
 
         var idle        = AddState(sm, "Idle",         clips["Idle"],       1.5f);
-        var walk        = AddState(sm, "Walk",         clips["Walk"],       1.5f);
-        var run         = AddState(sm, "Run",          clips["Run"],        3f);
+        var walk        = AddState(sm, "Walk",         clips["Walk"],       1.75f);
+        var run         = AddState(sm, "Run",          clips["Run"],        3.5f);
         var jumpStart   = AddState(sm, "JumpStart",    clips["Jump_start"], 2.1f);
         var airFloat    = AddState(sm, "Float",        clips["Jump_loop"],  1.25f);
         var gravitySlam = AddState(sm, "GravitySlam",  clips["Idle"],       1.5f);

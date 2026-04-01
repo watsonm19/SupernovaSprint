@@ -893,6 +893,10 @@ public class SupernovaSprintController : MonoBehaviour
         Vector3 camRight   = Vector3.ProjectOnPlane(cameraTransform.right,   Vector3.up).normalized;
         Vector3 inputDir   = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
+        // Rotate to face input direction in the air
+        Quaternion targetRot = Quaternion.LookRotation(inputDir, Vector3.up);
+        transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
+
         // Air control tapers with speed — faster = less ability to drift.
         // t = 0 (still) → full airControlFactor.  t = 1 (maxAirStrafeSpeed) → zero control.
         // 1 − t^exponent: holds strong at low/mid speed, drops off sharply near the cap.
@@ -1234,7 +1238,7 @@ public class SupernovaSprintController : MonoBehaviour
         _slamCooldownTimer = Mathf.Max(0f, _slamCooldownTimer - Time.fixedDeltaTime);
 
         // ── Advance along rail ────────────────────────────────────────────────
-        float grindSpeed = topSpeed * 1.6f;
+        float grindSpeed = topSpeed * 1.7f;
         _railDistance += grindSpeed * _grindDirectionSign * Time.fixedDeltaTime;
 
         // ── End of rail — launch off in travel direction ──────────────────────
@@ -1252,10 +1256,10 @@ public class SupernovaSprintController : MonoBehaviour
         rb.linearVelocity = travelDir * grindSpeed;
         currentSpeed = grindSpeed;
 
-        // ── Face travel direction ─────────────────────────────────────────────
+        // ── Face 90° left of travel direction (snowboard stance) ─────────────
         if (travelDir.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRot = Quaternion.LookRotation(travelDir, Vector3.up);
+            Quaternion targetRot = Quaternion.LookRotation(travelDir, Vector3.up) * Quaternion.Euler(0f, -75f, 0f);
             transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
         }
 
@@ -1281,7 +1285,7 @@ public class SupernovaSprintController : MonoBehaviour
         {
             // Fly off the end at full rail speed
             var (_, railDir) = _activeRail.GetPointAtDistance(_railDistance);
-            rb.linearVelocity = railDir * _grindDirectionSign * (topSpeed * 1.6f);
+            rb.linearVelocity = railDir * _grindDirectionSign * (topSpeed * 1.7f);
         }
 
         _activeRail      = null;

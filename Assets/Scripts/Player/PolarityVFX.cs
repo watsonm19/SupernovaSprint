@@ -129,7 +129,7 @@ public class PolarityVFX : MonoBehaviour
         }
 
         // Thruster — plays only when in Rocket Mode and actually moving.
-        bool shouldPlay = controller.isRocketMode && controller.currentSpeed > 0.1f;
+        bool shouldPlay = controller.isRocketMode && controller.currentSpeed > 0.1f && !controller.isGrindingPublic;
         if (shouldPlay == _thrusterWasPlaying) return;
 
         _thrusterWasPlaying = shouldPlay;

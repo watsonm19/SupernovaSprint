@@ -115,7 +115,7 @@ MonoBehaviour:
   topSpeed: 25
   acceleration: 62.5
   slopeForce: 40
-  turnSpeed: 10
+  turnSpeed: 7.5
   jumpForce: 13.36
   jumpHoldForce: 22.7
   jumpHoldTime: 0.2
@@ -123,13 +123,13 @@ MonoBehaviour:
   jumpBufferTime: 0.15
   homingRange: 15
   homingSpeed: 40
-  homingBounceForce: 11.565
+  homingBounceForce: 13.36
   homingFreezeFrameDuration: 0.05
   homingDashDuration: 0.35
   gravityForce: 25
   groundStickyForce: 15
-  groundCheckRadius: 0.4
-  groundCheckDistance: 1.1
+  groundCheckRadius: 0.2
+  groundCheckDistance: 1.25
   surfaceAlignSpeed: 12
   minGroundNormalAlignment: 0.1
   groundLayers:
@@ -142,18 +142,18 @@ MonoBehaviour:
   maxAirStrafeSpeed: 80
   airControlFalloffExponent: 0.5
   forceBoostSpeed: 10
-  forceBoostUpForce: 7.71
+  forceBoostUpForce: 10.91
   slamSpeed: 35
-  slamAcceleration: 3
-  slamBounceRatio: 0.837
-  slamMinBounceForce: 18.09
-  slamMaxBounceForce: 20.41
+  slamAcceleration: 5
+  slamBounceRatio: 0.671
+  slamMinBounceForce: 20.41
+  slamMaxBounceForce: 23.14
   slamAirControl: 50
   slamFreezeFrameDuration: 0.05
   slamGroundBuffer: 0.2
   slamCooldown: 0.34
   surgeSpeedBonus: 10.2
-  surgeTurnSpeedReduction: 6
+  surgeTurnSpeedReduction: 4
   surgeBrakeFrictionReduction: 5
   surgeBrakeFrictionAngleBonus: 45
   surgeRollingFrictionReduction: 25
@@ -262,8 +262,8 @@ MonoBehaviour:
   gravitySlamImpact: {fileID: 8300000, guid: 3934463e574397944863591aef389955, type: 3}
   novaSurgeActivate: {fileID: 8300000, guid: 53c1977fc9af54141a35c5ecddc92c97, type: 3}
   novaSurgeRecharged: {fileID: 8300000, guid: 4305428dabbeb6b42ae6de1dccf453ff, type: 3}
-  footstepIntervalSlow: 0.6134
-  footstepIntervalFast: 0.267
+  footstepIntervalSlow: 0.5258
+  footstepIntervalFast: 0.2289
   footstepVolume: 1.25
   jumpVolume: 0.7
   landVolume: 1.5

@@ -48,6 +48,7 @@ public class SpeedLines : MonoBehaviour
     // ── Private state ─────────────────────────────────────────────────────────
 
     private ParticleSystem _ps;
+    private Rigidbody      _rb;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -55,12 +56,17 @@ public class SpeedLines : MonoBehaviour
     {
         if (controller == null)
             controller = GetComponent<SupernovaSprintController>();
+        _rb = controller.GetComponent<Rigidbody>();
         _ps = BuildParticleSystem();
     }
 
     private void Update()
     {
         if (controller == null || _ps == null) return;
+
+        // Orient emitter opposite to current velocity so streaks always trail movement
+        if (_rb != null && _rb.linearVelocity.sqrMagnitude > 0.1f)
+            transform.rotation = Quaternion.LookRotation(-_rb.linearVelocity.normalized, Vector3.up);
 
         float speed = controller.currentSpeed;
         float t     = Mathf.Clamp01((speed - speedThreshold) / (fullSpeed - speedThreshold));
@@ -80,7 +86,6 @@ public class SpeedLines : MonoBehaviour
     private ParticleSystem BuildParticleSystem()
     {
         transform.localPosition = emitterPosition;
-        transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
 
         var ps = gameObject.AddComponent<ParticleSystem>();
 
