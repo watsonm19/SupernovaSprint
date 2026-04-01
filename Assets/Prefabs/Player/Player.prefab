@@ -49,6 +49,7 @@ GameObject:
   - component: {fileID: 6223953827598293972}
   - component: {fileID: 8934439916513361943}
   - component: {fileID: 4837254977157447884}
+  - component: {fileID: 2879339461205759466}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -326,6 +327,25 @@ MonoBehaviour:
   duration: 0.125
   dropDistance: 1.55
   impactDuration: 0.33
+--- !u!114 &2879339461205759466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3881487371748999295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caae710d8eedc7c4582473bda5f81ba2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MotionBlurController
+  controller: {fileID: 7168267401702996782}
+  postProcessVolume: {fileID: 0}
+  noBlurBelow: 20
+  lowBlurStart: 21
+  highBlurAbove: 75
+  lowIntensity: 0.1
+  highIntensity: 0.25
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0

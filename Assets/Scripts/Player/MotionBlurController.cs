@@ -42,6 +42,12 @@ public class MotionBlurController : MonoBehaviour
     {
         if (controller == null) return;
 
+        if (postProcessVolume == null)
+        {
+            var go = GameObject.Find("Global Volume");
+            if (go != null) postProcessVolume = go.GetComponent<Volume>();
+        }
+
         if (_motionBlur == null && postProcessVolume != null)
         {
             postProcessVolume.profile.TryGet(out _motionBlur);
@@ -60,6 +66,5 @@ public class MotionBlurController : MonoBehaviour
                 Mathf.Clamp01((speed - lowBlurStart) / (highBlurAbove - lowBlurStart)));
 
         _motionBlur.intensity.value = intensity;
-        Debug.Log($"[MotionBlur] speed={speed:F1} intensity={intensity:F3}");
     }
 }
