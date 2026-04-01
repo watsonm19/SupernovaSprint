@@ -78,6 +78,8 @@ public class GravitySlamVFX : MonoBehaviour
             controller.OnGravitySlam          += TriggerActivationVFX;
             controller.OnGravitySlamImpact    += TriggerImpactVFX;
             controller.OnGravitySlamCancelled += TriggerCancelVFX;
+            controller.OnGrindStart           += OnGrindStart;
+            controller.OnGrindEnd             += OnGrindEnd;
         }
     }
 
@@ -88,6 +90,8 @@ public class GravitySlamVFX : MonoBehaviour
             controller.OnGravitySlam          -= TriggerActivationVFX;
             controller.OnGravitySlamImpact    -= TriggerImpactVFX;
             controller.OnGravitySlamCancelled -= TriggerCancelVFX;
+            controller.OnGrindStart           -= OnGrindStart;
+            controller.OnGrindEnd             -= OnGrindEnd;
         }
 
         if (_activationCoroutine != null)
@@ -106,6 +110,22 @@ public class GravitySlamVFX : MonoBehaviour
 
     // ── VFX ───────────────────────────────────────────────────────────────────
 
+    private bool _isGrinding;
+
+    private void OnGrindStart()
+    {
+        _isGrinding = true;
+        // Keep the disc visible — it becomes the grind board for the duration of the rail.
+    }
+
+    private void OnGrindEnd()
+    {
+        _isGrinding = false;
+        // Rail is done — clean up the disc now.
+        if (_filledDisc != null) { Destroy(_filledDisc); _filledDisc = null; }
+        CleanupRings();
+    }
+
     private void TriggerCancelVFX()
     {
         if (_activationCoroutine != null)
@@ -113,6 +133,24 @@ public class GravitySlamVFX : MonoBehaviour
             StopCoroutine(_activationCoroutine);
             _activationCoroutine = null;
         }
+
+        if (_isGrinding)
+        {
+            // Force-complete the activation so the disc always appears during a grind,
+            // even if the slam triggered right above the rail before the routine finished.
+            Vector3 upperEnd = Vector3.up * (centerHeight + verticalOffset) + Vector3.down * dropDistance;
+            Vector3 lowerEnd = Vector3.up * (centerHeight - verticalOffset) + Vector3.down * dropDistance;
+
+            if (_upper != null) { _upper.transform.localPosition = upperEnd; UpdateRing(_upper, endRadius, 1f); }
+            if (_lower != null) { _lower.transform.localPosition = lowerEnd; UpdateRing(_lower, endRadius, 1f); }
+
+            if (_filledDisc == null)
+                _filledDisc = CreateFilledDisc(upperEnd, endRadius);
+
+            if (_lower != null) { Destroy(_lower.gameObject); _lower = null; }
+            return;
+        }
+
         CleanupAll();
     }
 
@@ -132,15 +170,26 @@ public class GravitySlamVFX : MonoBehaviour
             _activationCoroutine = null;
         }
 
-        // Snap rings to end state in case activation hadn't finished
+        // Snap upper ring to end state in case activation hadn't finished yet
         if (_upper != null)
         {
             _upper.transform.localPosition = Vector3.up * (centerHeight + verticalOffset) + Vector3.down * dropDistance;
             UpdateRing(_upper, endRadius, 1f);
         }
+
+        // Always snap lower ring to its end position before the impact animation.
+        // If activation was interrupted mid-way, _lower exists but is at a partial position.
+        // If activation completed, _lower was destroyed when the disc appeared.
+        // Both cases need the same result: _lower sitting at the end position, ready to travel up.
+        Vector3 lowerEndPos = Vector3.up * (centerHeight - verticalOffset) + Vector3.down * dropDistance;
         if (_lower != null)
         {
-            _lower.transform.localPosition = Vector3.up * (centerHeight - verticalOffset) + Vector3.down * dropDistance;
+            _lower.transform.localPosition = lowerEndPos;
+            UpdateRing(_lower, endRadius, 1f);
+        }
+        else
+        {
+            _lower = CreateRing(lowerEndPos);
             UpdateRing(_lower, endRadius, 1f);
         }
 
@@ -165,6 +214,8 @@ public class GravitySlamVFX : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
+            if (_upper == null || _lower == null) yield break;
+
             float t      = elapsed / duration;
             float radius = Mathf.Lerp(startRadius, endRadius, t);
             float d      = dropDistance * t;
@@ -187,8 +238,9 @@ public class GravitySlamVFX : MonoBehaviour
         UpdateRing(_upper, endRadius, 1f);
         UpdateRing(_lower, endRadius, 1f);
 
-        // Fill in the upper ring as a solid disc
+        // Fill in the upper ring as a solid disc; lower ring disappears at the same moment
         _filledDisc = CreateFilledDisc(upperEnd, endRadius);
+        if (_lower != null) { Destroy(_lower.gameObject); _lower = null; }
 
         _activationCoroutine = null;
     }
@@ -205,6 +257,8 @@ public class GravitySlamVFX : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < impactDuration)
         {
+            if (_upper == null || _lower == null) yield break;
+
             float t      = elapsed / impactDuration;
             float radius = Mathf.Lerp(endRadius, startRadius, t);
 

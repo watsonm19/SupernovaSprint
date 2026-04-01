@@ -56,18 +56,20 @@ public static class AstronautAnimatorBuilder
         controller.AddParameter("Speed",        AnimatorControllerParameterType.Float);
         controller.AddParameter("IsGrounded",  AnimatorControllerParameterType.Bool);
         controller.AddParameter("IsHoming",    AnimatorControllerParameterType.Bool);
+        controller.AddParameter("IsSlamming",  AnimatorControllerParameterType.Bool);
         controller.AddParameter("ForceBoost",  AnimatorControllerParameterType.Trigger);
 
         // ── States ────────────────────────────────────────────────────────────
         var sm = controller.layers[0].stateMachine;
 
-        var idle       = AddState(sm, "Idle",        clips["Idle"],       1f);
-        var walk       = AddState(sm, "Walk",        clips["Walk"],       1.5f);
-        var run        = AddState(sm, "Run",         clips["Run"],        3f);
-        var jumpStart  = AddState(sm, "JumpStart",   clips["Jump_start"], 2.1f);
-        var airFloat   = AddState(sm, "Float",       clips["Jump_loop"],  1.25f);
-        var forceBoost = AddState(sm, "ForceBoost",  clips["Float"],      9f);
-        var flip       = AddState(sm, "Flip",        clips["Flip"],       1f);
+        var idle        = AddState(sm, "Idle",         clips["Idle"],       1.5f);
+        var walk        = AddState(sm, "Walk",         clips["Walk"],       1.5f);
+        var run         = AddState(sm, "Run",          clips["Run"],        3f);
+        var jumpStart   = AddState(sm, "JumpStart",    clips["Jump_start"], 2.1f);
+        var airFloat    = AddState(sm, "Float",        clips["Jump_loop"],  1.25f);
+        var gravitySlam = AddState(sm, "GravitySlam",  clips["Idle"],       1.5f);
+        var forceBoost  = AddState(sm, "ForceBoost",   clips["Float"],      9f);
+        var flip        = AddState(sm, "Flip",         clips["Flip"],       1f);
 
         sm.defaultState = idle;
 
@@ -93,6 +95,29 @@ public static class AstronautAnimatorBuilder
         //  JumpStart → Float (plays the full jump_start clip, then blends to float)
         var jumpToFloat = Transition(jumpStart, airFloat, 0.1f, true);
         jumpToFloat.exitTime = 1f;
+
+        //  Float → GravitySlam (downward slam phase)
+        var floatToSlam = Transition(airFloat, gravitySlam, 0.1f, false);
+        floatToSlam.AddCondition(AnimatorConditionMode.If, 0f, "IsSlamming");
+
+        //  GravitySlam → Float (slam cancelled mid-air)
+        var slamToFloat = Transition(gravitySlam, airFloat, 0.1f, false);
+        slamToFloat.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsSlamming");
+        slamToFloat.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsGrounded");
+
+        //  GravitySlam → grounded locomotion (on impact)
+        var slamToIdle = Transition(gravitySlam, idle, 0.15f, false);
+        slamToIdle.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        slamToIdle.AddCondition(AnimatorConditionMode.Less,    WALK_THRESHOLD, "Speed");
+
+        var slamToWalk = Transition(gravitySlam, walk, 0.15f, false);
+        slamToWalk.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        slamToWalk.AddCondition(AnimatorConditionMode.Greater, WALK_THRESHOLD, "Speed");
+        slamToWalk.AddCondition(AnimatorConditionMode.Less,    RUN_THRESHOLD,  "Speed");
+
+        var slamToRun = Transition(gravitySlam, run, 0.15f, false);
+        slamToRun.AddCondition(AnimatorConditionMode.If,      0f,             "IsGrounded");
+        slamToRun.AddCondition(AnimatorConditionMode.Greater, RUN_THRESHOLD,  "Speed");
 
         //  Float → grounded locomotion
         var floatToIdle = Transition(airFloat, idle, 0.15f, false);

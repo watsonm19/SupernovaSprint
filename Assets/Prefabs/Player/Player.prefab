@@ -144,12 +144,14 @@ MonoBehaviour:
   forceBoostSpeed: 10
   forceBoostUpForce: 7.71
   slamSpeed: 35
+  slamAcceleration: 3
   slamBounceRatio: 0.837
   slamMinBounceForce: 18.09
   slamMaxBounceForce: 20.41
   slamAirControl: 50
   slamFreezeFrameDuration: 0.05
   slamGroundBuffer: 0.2
+  slamCooldown: 0.34
   surgeSpeedBonus: 10.2
   surgeTurnSpeedReduction: 6
   surgeBrakeFrictionReduction: 5
@@ -321,9 +323,9 @@ MonoBehaviour:
   endRadius: 0.7
   centerHeight: 1.2
   verticalOffset: 0.25
-  duration: 0.2
-  dropDistance: 1.25
-  impactDuration: 0.4
+  duration: 0.125
+  dropDistance: 1.55
+  impactDuration: 0.33
 --- !u!1 &4161311611875934899
 GameObject:
   m_ObjectHideFlags: 0

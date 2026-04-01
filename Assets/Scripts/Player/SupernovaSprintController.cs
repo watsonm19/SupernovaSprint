@@ -130,8 +130,11 @@ public class SupernovaSprintController : MonoBehaviour
     public float forceBoostUpForce = 8f;
 
     [Header("── Gravity Slam ─────────────────────────────────────────────")]
-    [Tooltip("Constant downward speed (m/s) for the duration of the slam.")]
+    [Tooltip("Initial downward speed (m/s) at the start of the slam.")]
     public float slamSpeed = 40f;
+
+    [Tooltip("How quickly the downward slam speed increases per second (m/s²). Keep small for a subtle effect.")]
+    public float slamAcceleration = 5f;
 
     [Tooltip("Scales the freefall-equivalent bounce velocity. 1.0 = bounce as high as you fell, <1.0 = lower.")]
     [Range(0f, 1f)]
@@ -152,6 +155,10 @@ public class SupernovaSprintController : MonoBehaviour
 
     [Tooltip("Ground proximity distance (m) at which slam impact triggers.")]
     public float slamGroundBuffer = 0.2f;
+
+    [Tooltip("How long after impact before the player can slam again (seconds). " +
+             "Match this to GravitySlamVFX.impactDuration so the cooldown ends when the rings finish animating.")]
+    public float slamCooldown = 0.125f;
 
     [Header("── Nova Surge ───────────────────────────────────────────────")]
     [Tooltip("Flat top speed bonus added on top of Normal or Rocket Mode speed (m/s).")]
@@ -268,6 +275,7 @@ public class SupernovaSprintController : MonoBehaviour
     private bool      _slamHasHorizontal; // True if stick was pushed at activation
     private Vector3   _slamHorizVel;      // Horizontal velocity locked in at activation
     private float     _slamStartY;        // World-space Y at slam activation — used to measure fall distance
+    private float     _slamCooldownTimer;
 
     // Nova Surge
     private bool      _novaSurgeInputPressed;
@@ -275,7 +283,7 @@ public class SupernovaSprintController : MonoBehaviour
     private Coroutine _novaSurgeCoroutine;
 
     // State
-    private enum PlayerState { Grounded, Airborne, HomingAttack }
+    private enum PlayerState { Grounded, Airborne, HomingAttack, Grinding }
     private PlayerState state = PlayerState.Airborne;
 
     // Public read-only diagnostics (useful for a HUD speed counter)
@@ -293,6 +301,8 @@ public class SupernovaSprintController : MonoBehaviour
     [System.NonSerialized] public System.Action        OnGravitySlamCancelled; // slam cancelled mid-air
     [System.NonSerialized] public System.Action        OnNovaSurge;
     [System.NonSerialized] public System.Action        OnSurgeRecharged;
+    [System.NonSerialized] public System.Action        OnGrindStart;
+    [System.NonSerialized] public System.Action        OnGrindEnd;
 
     // Nova Surge readable state — use for screen shake, motion blur, HUD, etc.
     [System.NonSerialized] public bool  isNovaSurging;
@@ -310,9 +320,17 @@ public class SupernovaSprintController : MonoBehaviour
     // True while Gravity Slam is in progress — readable by VFX, HUD, etc.
     [System.NonSerialized] public bool isSlamming;
 
+    // True while the player is grinding a rail — readable by VFX, HUD, animator, etc.
+    [System.NonSerialized] public bool isGrindingPublic;
+
     // Animator-readable state flags — written each FixedUpdate by UpdateState().
     [System.NonSerialized] public bool isGroundedPublic;
     [System.NonSerialized] public bool isHomingPublic;
+
+    // Rail grinding
+    private RailTrack _activeRail;
+    private float     _railDistance;
+    private float     _grindDirectionSign; // +1 = toward last waypoint, −1 = toward first
 
     // Normal Mode value snapshots — captured in Awake() so toggling back always restores them.
     private float _baseTopSpeed;
@@ -363,6 +381,12 @@ public class SupernovaSprintController : MonoBehaviour
             _slamCoroutine = null;
         }
         isSlamming = false;
+
+        // Clear grind state so a mid-grind death doesn't lock the player to the rail.
+        _activeRail      = null;
+        isGrindingPublic = false;
+        if (state == PlayerState.Grinding)
+            state = PlayerState.Airborne;
     }
 
     private void FixedUpdate()
@@ -377,6 +401,13 @@ public class SupernovaSprintController : MonoBehaviour
         {
             isHomingPublic = true;
             HandleForceBoost(); // Allow cancelling mid-attack
+            return;
+        }
+
+        // Rail grinding drives its own movement — skip all normal physics while active.
+        if (state == PlayerState.Grinding)
+        {
+            GrindingMovement();
             return;
         }
 
@@ -417,6 +448,7 @@ public class SupernovaSprintController : MonoBehaviour
         jumpBufferTimer       = Mathf.Max(0f, jumpBufferTimer       - Time.fixedDeltaTime);
         coyoteTimer           = Mathf.Max(0f, coyoteTimer           - Time.fixedDeltaTime);
         jumpGroundIgnoreTimer = Mathf.Max(0f, jumpGroundIgnoreTimer - Time.fixedDeltaTime);
+        _slamCooldownTimer    = Mathf.Max(0f, _slamCooldownTimer    - Time.fixedDeltaTime);
     }
 
     #endregion
@@ -919,7 +951,9 @@ public class SupernovaSprintController : MonoBehaviour
         if (!_gravSlamPressed) return;
         _gravSlamPressed = false;
         if (isSlamming) return;
-        if (state == PlayerState.Grounded) return; // Airborne only
+        if (_slamCooldownTimer > 0f) return;
+        if (state == PlayerState.Grounded) return;  // Airborne only
+        if (state == PlayerState.Grinding) return;  // Not while on a rail
 
         // Interrupt homing attack
         if (state == PlayerState.HomingAttack && _activeHomingCoroutine != null)
@@ -949,9 +983,11 @@ public class SupernovaSprintController : MonoBehaviour
     private IEnumerator GravitySlamRoutine()
     {
         isSlamming = true;
+        float currentSlamSpeed = slamSpeed;
 
         while (true)
         {
+            currentSlamSpeed += slamAcceleration * Time.fixedDeltaTime;
             // ── Cancel into Force Boost ────────────────────────────────────────
             if (forceBoostPressed && forceBoostAvailable)
             {
@@ -978,8 +1014,10 @@ public class SupernovaSprintController : MonoBehaviour
                 Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right,   Vector3.up).normalized;
                 Vector3 inputDir = (camFwd * moveInput.y + camRight * moveInput.x).normalized;
                 _slamHorizVel += inputDir * slamAirControl * Time.fixedDeltaTime;
+                if (_slamHorizVel.magnitude > topSpeed)
+                    _slamHorizVel = _slamHorizVel.normalized * topSpeed;
             }
-            rb.linearVelocity = _slamHorizVel - transform.up * slamSpeed;
+            rb.linearVelocity = _slamHorizVel - transform.up * currentSlamSpeed;
 
             // ── Ground proximity check ─────────────────────────────────────────
             //  Uses the same origin/radius as DetectGround so results are consistent.
@@ -1015,6 +1053,7 @@ public class SupernovaSprintController : MonoBehaviour
                 isSlamming          = false;
                 state               = PlayerState.Airborne;
                 _slamCoroutine      = null;
+                _slamCooldownTimer  = slamCooldown;
 
                 OnGravitySlamImpact?.Invoke();
                 yield break;
@@ -1144,6 +1183,111 @@ public class SupernovaSprintController : MonoBehaviour
         canSurge               = true;
         OnSurgeRecharged?.Invoke();
         _novaSurgeCoroutine    = null;
+    }
+
+    #endregion
+    // ─────────────────────────────────────────────────────────────────────────
+    #region Rail Grinding
+
+    // Called by RailTrack.OnTriggerEnter when the player contacts a rail while airborne/slamming.
+    public void StartGrinding(RailTrack rail)
+    {
+        // Notify grind start FIRST so VFX listeners can suppress disc cleanup
+        // before OnGravitySlamCancelled fires below.
+        OnGrindStart?.Invoke();
+
+        // Cancel any active states that would conflict
+        if (isSlamming && _slamCoroutine != null)
+        {
+            StopCoroutine(_slamCoroutine);
+            _slamCoroutine = null;
+            isSlamming     = false;
+            OnGravitySlamCancelled?.Invoke();
+        }
+        if (state == PlayerState.HomingAttack && _activeHomingCoroutine != null)
+        {
+            StopCoroutine(_activeHomingCoroutine);
+            _activeHomingCoroutine = null;
+        }
+        isJumping = false;
+
+        _activeRail   = rail;
+        _railDistance = rail.GetClosestDistance(transform.position);
+
+        // Travel toward the end waypoint by default; reverse if current velocity opposes that direction.
+        var (_, railDir) = rail.GetPointAtDistance(_railDistance);
+        _grindDirectionSign = Vector3.Dot(rb.linearVelocity, railDir) >= 0f ? 1f : -1f;
+
+        state               = PlayerState.Grinding;
+        isGrindingPublic    = true;
+        homingAvailable     = true;
+        forceBoostAvailable = true;
+    }
+
+    private void GrindingMovement()
+    {
+        if (_activeRail == null) { ExitGrinding(launchOff: false); return; }
+
+        // Discard inputs that are disabled during a grind
+        forceBoostPressed = false;
+        _gravSlamPressed  = false;
+        _slamCooldownTimer = Mathf.Max(0f, _slamCooldownTimer - Time.fixedDeltaTime);
+
+        // ── Advance along rail ────────────────────────────────────────────────
+        float grindSpeed = topSpeed * 1.6f;
+        _railDistance += grindSpeed * _grindDirectionSign * Time.fixedDeltaTime;
+
+        // ── End of rail — launch off in travel direction ──────────────────────
+        if (_railDistance >= _activeRail.TotalLength || _railDistance <= 0f)
+        {
+            ExitGrinding(launchOff: true);
+            return;
+        }
+
+        // ── Snap to rail position and lock velocity ───────────────────────────
+        var (railPos, railDir) = _activeRail.GetPointAtDistance(_railDistance);
+        Vector3 travelDir      = railDir * _grindDirectionSign;
+
+        rb.MovePosition(railPos);
+        rb.linearVelocity = travelDir * grindSpeed;
+        currentSpeed = grindSpeed;
+
+        // ── Face travel direction ─────────────────────────────────────────────
+        if (travelDir.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(travelDir, Vector3.up);
+            transform.rotation   = Quaternion.Slerp(transform.rotation, targetRot, turnSpeed * Time.fixedDeltaTime);
+        }
+
+        isGrindingPublic = true;
+
+        // ── Jump off rail ─────────────────────────────────────────────────────
+        if (jumpBufferTimer > 0f)
+        {
+            jumpBufferTimer = 0f;
+            ExitGrinding(launchOff: false);
+
+            // Preserve full rail momentum into the jump — same pattern as ground jump
+            rb.linearVelocity = travelDir * grindSpeed + Vector3.up * jumpForce;
+            isJumping     = true;
+            jumpHoldTimer = 0f;
+            OnJump?.Invoke();
+        }
+    }
+
+    private void ExitGrinding(bool launchOff)
+    {
+        if (launchOff && _activeRail != null)
+        {
+            // Fly off the end at full rail speed
+            var (_, railDir) = _activeRail.GetPointAtDistance(_railDistance);
+            rb.linearVelocity = railDir * _grindDirectionSign * (topSpeed * 1.6f);
+        }
+
+        _activeRail      = null;
+        state            = PlayerState.Airborne;
+        isGrindingPublic = false;
+        OnGrindEnd?.Invoke();
     }
 
     #endregion

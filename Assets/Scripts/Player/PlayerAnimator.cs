@@ -34,6 +34,7 @@ public class PlayerAnimator : MonoBehaviour
     private static readonly int SpeedHash       = Animator.StringToHash("Speed");
     private static readonly int IsGroundedHash  = Animator.StringToHash("IsGrounded");
     private static readonly int IsHomingHash    = Animator.StringToHash("IsHoming");
+    private static readonly int IsSlammingHash  = Animator.StringToHash("IsSlamming");
     private static readonly int ForceBoostHash  = Animator.StringToHash("ForceBoost");
 
     private void OnEnable()
@@ -55,5 +56,6 @@ public class PlayerAnimator : MonoBehaviour
         animator.SetFloat(SpeedHash,      controller.currentSpeed);
         animator.SetBool(IsGroundedHash,  controller.isGroundedPublic);
         animator.SetBool(IsHomingHash,    controller.isHomingPublic);
+        animator.SetBool(IsSlammingHash,  controller.isSlamming || controller.isGrindingPublic);
     }
 }
