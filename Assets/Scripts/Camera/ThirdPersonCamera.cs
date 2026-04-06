@@ -201,6 +201,35 @@ public class ThirdPersonCamera : MonoBehaviour
         _shakeCoroutine = StartCoroutine(ShakeRoutine(duration, magnitude));
     }
 
+    /// <summary>
+    /// Smoothly rotates the camera yaw by the given degrees over the given duration.
+    /// Positive = clockwise (right), negative = counter-clockwise (left).
+    /// </summary>
+    public void RotateYaw(float degrees, float duration)
+    {
+        if (_yawRotateCoroutine != null) StopCoroutine(_yawRotateCoroutine);
+        _yawRotateCoroutine = StartCoroutine(YawRotateRoutine(degrees, duration));
+    }
+
+    private Coroutine _yawRotateCoroutine;
+
+    private IEnumerator YawRotateRoutine(float degrees, float duration)
+    {
+        float elapsed   = 0f;
+        float startYaw  = yaw;
+        float targetYaw = yaw + degrees;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            yaw      = Mathf.Lerp(startYaw, targetYaw, Mathf.SmoothStep(0f, 1f, elapsed / duration));
+            yield return null;
+        }
+
+        yaw                 = targetYaw;
+        _yawRotateCoroutine = null;
+    }
+
     private IEnumerator ShakeRoutine(float duration, float magnitude)
     {
         float elapsed = 0f;

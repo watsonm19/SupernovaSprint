@@ -275,7 +275,7 @@ public class SupernovaSprintController : MonoBehaviour
     private Coroutine _novaSurgeCoroutine;
 
     // State
-    private enum PlayerState { Grounded, Airborne, HomingAttack, Grinding }
+    private enum PlayerState { Grounded, Airborne, HomingAttack, Grinding, Tethered }
     private PlayerState state = PlayerState.Airborne;
 
     // Public read-only diagnostics (useful for a HUD speed counter)
@@ -402,6 +402,9 @@ public class SupernovaSprintController : MonoBehaviour
             GrindingMovement();
             return;
         }
+
+        // Tether: SlingAnchor drives movement entirely during the swing.
+        if (state == PlayerState.Tethered) return;
 
         TickTimers();
         DetectGround();
@@ -1274,6 +1277,26 @@ public class SupernovaSprintController : MonoBehaviour
         state            = PlayerState.Airborne;
         isGrindingPublic = false;
         OnGrindEnd?.Invoke();
+    }
+
+    #endregion
+    // ─────────────────────────────────────────────────────────────────────────
+    #region Sling Tether
+
+    // Called by SlingAnchor when the player grabs the anchor.
+    public void StartTether()
+    {
+        isJumping  = false;
+        isSlamming = false;
+        state      = PlayerState.Tethered;
+    }
+
+    // Called by SlingAnchor when the swing completes.
+    public void ReleaseTether(Vector3 exitVelocity)
+    {
+        rb.linearVelocity = exitVelocity;
+        state             = PlayerState.Airborne;
+        homingAvailable   = true;
     }
 
     #endregion
